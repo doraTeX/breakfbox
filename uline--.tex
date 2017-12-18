@@ -1,0 +1,981 @@
+\DeclareFontShape{JY1}{mc}{m}{n}{<->jis}{}
+\DeclareFontShape{JY1}{gt}{m}{n}{<->jisg}{}
+\documentclass{jarticle}
+\makeatletter
+\expandafter\def\expandafter\@listI\expandafter{\@listI
+   \topsep.5\normalbaselineskip \partopsep\z@ \parsep\z@
+   \itemsep.25\normalbaselineskip}
+\expandafter\def\expandafter\@listii\expandafter{\@listii
+   \topsep.25\normalbaselineskip \partopsep\z@ \parsep\z@ \itemsep\z@
+   \interlinepenalty\@M}
+\@listI
+\let\@listi\@listI
+\makeatother
+
+\usepackage{uline--}
+
+\DeclareTextFontCommand{\textbfit}{\bfseries\itshape}
+
+\xspcode`\\=3
+\def\meta#1{\ensuremath{\langle\textsl{#1}\rangle}}
+\usepackage{color}
+
+%\UseAltLeaders
+
+\title{「単純な下線」パッケージuline$--$\\ {\normalsize （2006/12/29版）}}
+\author{しっぽ愛好家}
+\date{2006年12月29日}
+\begin{document}
+
+\maketitle
+
+\section{基本的な使用法}
+このuline$--$パッケージでは，
+基本的なユーザマクロとして次の3個のマクロを提供しています．
+\begin{itemize}
+\item \verb/\uline/:
+\verb/\uline/の引数としたテキストに下線（縦組み時には左側の傍線）をつけるマクロ
+
+\begin{itemize}
+  \item \verb/\uline{/サンプルテキスト\verb/}/ → \uline{サンプルテキスト}
+\end{itemize}
+
+\item \verb/\mline/:
+\verb/\mline/の引数としたテキストに打ち消し線をつけるマクロ
+
+\begin{itemize}
+  \item \verb/\mline{/サンプルテキスト\verb/}/ → \mline{サンプルテキスト}
+\end{itemize}
+
+\item \verb/\oline/:
+\verb/\oline/の引数としたテキストに上線（縦組み時には右側の傍線）をつけるマクロ
+
+\begin{itemize}
+  \item \verb/\oline{/サンプルテキスト\verb/}/ → \oline{サンプルテキスト}
+\end{itemize}
+\end{itemize}
+
+また，線種を破線・波線に変更したマクロも用意しています．
+
+\begin{itemize}
+\item 破線のもの: \verb/\udash/，\verb/\mdash/，\verb/\odash/
+\begin{itemize}
+  \item
+  \verb/\udash{/破線の例\verb/}\mdash{/破線の例\verb/}\odash{/破線の例\verb/}/\\
+  → \udash{破線の例}\mdash{破線の例}\odash{破線の例}
+\end{itemize}
+
+\item 波線のもの: \verb/\uwave/，\verb/\mwave/，\verb/\owave/
+\begin{itemize}
+  \item
+  \verb/\uwave{/波線の例\verb/}\mwave{/波線の例\verb/}\owave{/波線の例\verb/}/\\
+  → \uwave{波線の例}\mwave{波線の例}\owave{波線の例}
+\end{itemize}
+\end{itemize}
+
+これらはいずれも行分割可能な線をテキストに付加します．
+禁則処理についても考慮していますが，
+「\verb/\jcharwidowpenalty/を用いた段落末の1字孤立の回避」の処理は
+サポートできていませんので，必要があれば\verb/\uline/などの引数の中で
+\verb/\nobreak/を用いてください．
+また，uline$--$パッケージはp\LaTeX の使用を念頭に置いています．
+オリジナルの（欧文用の）\LaTeX で欧文テキストに下線などを付加する場合にも
+使えますが，J\LaTeX への対応は不完全です
+（J\LaTeX 使用時にはとりあえず処理可能というレベルで，
+禁則処理などがうまくいきません）．
+
+
+これらのマクロは組み合わせて用いることもできます．
+\begin{itemize}
+\item \verb/\uline{/下線と\verb/\mline{/打ち消し線\verb/}/の併用\verb/}/
+      → \uline{下線と\mline{打ち消し線}の併用}
+\item \verb/\uline{\oline{/下線と上線の併用\verb/}}/
+      → \uline{\oline{下線と上線の併用}}
+\end{itemize}
+その際，破線または波線を付加するコマンドは最大で5重にまで
+重ねて用いることができます（実線については制限なしに重ねることができます）．
+やむを得ず破線または波線を付加するコマンドを6重以上に重ねる場合には，
+\verb/\UlineMaxPatterns{/\meta{max\_patterns}\verb/}/%
+（\meta{max\_patterns}は6以上の整数）という指定をプリアンブルで行うと
+破線または波線を付加するコマンドを重ねる段階数の上限を
+\meta{max\_patterns}に増やせます．
+
+また，上記の9個のマクロは線の位置・線種が異なるのみで，
+実質的には同一のマクロです．
+そこで，以下の説明は主に\verb/\uline/について行います．
+
+まず，書体変更コマンド，欧文部分，数式についても単純に\verb/\uline/などの
+引数にできます．
+ただし，デフォルトでは単語のハイフネーションは自動的には行われません
+（が，実線を付加するマクロ（\verb/\uline/，\verb/\mline/，\verb/\oline/）の
+場合のみ\verb/\-/\,を使えます）．
+また，数式の途中での行分割も行われません．
+
+\begin{itemize}\sloppy
+\item \verb/\uline{\textgt{/書体変更\verb/}/と数式（\verb/$E = mc^2$/）を
+      含む\verb/sample/ \verb/text}/
+      → \uline{\textgt{書体変更}と数式（$E = mc^2$）を含むsample text}
+\item \verb/\uline{simple/ \verb/{\bfseries/ \verb/sample/ \verb/text/
+        \verb/with/ \verb/{\itshape/ \verb/long/
+        \verb/breakable/ \verb/underline}}}/
+      → \uline{simple {\bfseries sample text with
+            {\itshape long breakable underline}}}
+\end{itemize}
+
+通常のコマンドは，原則としてアルファベットと同様に扱われます．
+また，故意に1文字扱いにしたい文字列（行分割させたくない文字列）に対しては，
+（通常のテキストの記述の場合と同じく）
+\verb/\mbox/の引数にするという方法が使えます
+（なお，本文書では属性JY1/mc/m/nに対してjis.tfmを用いています）．
+一方，直前の例からもわかるように，単にグルーピングを行っただけでは
+1文字扱いにはなりません．
+
+\begin{itemize}
+\item \verb/\uline{\TeX/ （あるいは\verb/\LaTeX/ ）における下線\verb/}/\\
+      → \uline{\TeX （あるいは\LaTeX ）における下線}
+
+\item \verb/\parbox[t]{18zw}{\uline{\texttt{\symbol{92}mbox}/を用いた
+         行分割の抑制（例：\verb/\mbox{/キャット\verb/}/）\verb/}}/\\
+      → \parbox[t]{18zw}{\uline{\texttt{\symbol{92}mbox}を用いた
+            行分割の抑制（例：\mbox{キャット}）}}
+\item \verb/\parbox[t]{18zw}{\uline{\texttt{\symbol{92}mbox}/を用いた
+         行分割の抑制（例：キャット）\verb/}}/\\
+      → \parbox[t]{18zw}{\uline{\texttt{\symbol{92}mbox}を用いた
+            行分割の抑制（例：キャット）}}
+\end{itemize}
+
+標準配布のクラスファイルにおける\verb/\small/といった一部のfragileな
+コマンドについては\verb/\uline/などの側で対処していますが，
+それ以外の一般のfragileなコマンドが\verb/\uline/などの引数に含まれる場合には，
+\verb/\protect/で保護してください（\verb/\ref/などが与える文字列を
+正しく処理するといった目的のため，\verb/\uline/の引数などを展開してから
+処理しています）．
+
+\begin{itemize}
+\item 例えば，\verb/\uline{$A \protect\cong B$/の場合\verb/}/\,という記述の
+      \verb/\protect/を削除すると，エラーが生じます．
+\end{itemize}
+
+
+\section{オプション指定}\label{sec:options}
+\verb/\uline/などのオプション引数を用いて，
+下線などの位置・太さなどの変更ができます．
+
+\begin{itemize}
+\item \verb/lines=/\meta{number}:
+線の本数を正整数\meta{number}に設定します．
+\begin{itemize}
+  \item \verb/\uline[lines=3]{/サンプル\verb/}\mline[lines=2]{/サンプル2\verb/}/\\
+        → \uline[lines=3]{サンプル}\mline[lines=2]{サンプル2}
+\end{itemize}
+
+\item \verb/position=/\meta{dimen}:
+下線などの基準位置を寸法\meta{dimen}のところに設定します
+（ベースラインの位置から，横組み時は上側を正にし，
+縦組み時には右側を正にして計ります）．
+また，この「基準位置」というのは，
+\begin{itemize}
+  \item \verb/\uline/，\verb/\udash/の場合: 最も上にある線の中心の位置
+  \item \verb/\mline/，\verb/\mdash/の場合: 一連の線の中央の位置
+  \item \verb/\oline/，\verb/\odash/の場合: 最も下にある線の中心の位置
+\end{itemize}
+のことです．波線を付加するマクロの場合もこれらに準じています．
+\begin{itemize}
+  \item \verb/\uline{/\kern-.25pt サンプル\verb/}/%
+        \verb/\uline[position=0pt,lines=2]{/サンプル\verb/2}/\\
+        → \uline{サンプル}\uline[position=0pt,lines=2]{サンプル2}
+  \item \verb/\mline[lines=2,position=5pt]{/サンプル\verb/\rule{5pt}{5pt}}/\\
+        → \mline[lines=2,position=5pt]{サンプル\rule{5pt}{5pt}}
+\end{itemize}
+
+なお，この\verb/position/オプションに限り，
+寸法を具体的な数値で与える場合には，
+「\verb/position=/」を省略して寸法のみで指定できます．
+例えば，\verb/\uline[0pt]{...}/と指定した場合は
+\verb/\uline[position=0pt]{...}/として扱われます．
+
+
+\newpage
+\item \verb/width=/\meta{dimen}:
+下線などの太さを寸法\meta{dimen}に設定します．
+\begin{itemize}
+  \item \verb/\uline{/サンプル\verb/}\uline[width=1pt]{/サンプル2\verb/}/\\
+        → \uline{サンプル}\uline[width=1pt]{サンプル2}
+\end{itemize}
+ただし，波線については（繰り返しパターンとしてフォントlasy5の特定の文字を
+用いている都合で）0.28\,ptが太さの下限になります．
+
+\item \verb/linegap=/\meta{dimen}:
+2重以上の下線などでの線の間隔（線の中心間の距離ではなく，
+線どうしの間隙の大きさ）を寸法\meta{dimen}に設定します．
+\begin{itemize}
+  \item \verb/\mline[lines=2]{/\kern-1pt サンプル\kern-1pt
+        \verb/}\mline[lines=2,linegap=2pt]{/\kern-1pt サンプル2\verb/}/
+        → \mline[lines=2]{サンプル}%
+           \mline[lines=2,linegap=2pt]{サンプル2}
+\end{itemize}
+
+\item \verb/dashlength=/\meta{size}:
+破線の場合専用で，破線の繰り返しパターンの実線部分の長さを\meta{size}にします．
+ただし，個々の行に含まれる破線部分の両端に現れる実線部分の長さは
+\meta{size}の1/2となります（つまり，繰り返しパターンは「\meta{size}の1/2の長さの
+実線部分＋空白＋\meta{size}の1/2の長さの実線部分」です）．
+\begin{itemize}
+  \item    \verb/\udash{/破線のサンプル\verb/}\udash[dashlength=5pt]{/破線のサンプル\verb/}/
+        → \udash{破線のサンプル}\udash[dashlength=5pt]{破線のサンプル}
+\end{itemize}
+
+\item \verb/dashgap=/\meta{gap}:
+破線の場合専用で，破線の繰り返しパターンの空白部分の長さを\meta{gap}にします．
+\begin{itemize}
+  \item    \verb/\udash{/破線のサンプル\verb/}/\kern-.5pt%
+  \verb/\udash[dashgap=3pt]/\kern-.5pt\verb/{/破線のサンプル\nobreak\verb/}/\\
+        → \udash{破線のサンプル}\udash[dashgap=3pt]{破線のサンプル}
+\end{itemize}
+
+
+\item \verb/color=/\meta{colorname}:
+下線などの色を\meta{colorname}に設定します．
+この指定を利用する際にはcolorパッケージを別途読み込んでおく必要があります
+（次項についても同様です）．
+
+\begin{itemize}
+  \item \verb/\uline[color=blue]{/サンプル\verb/}/
+        → \uline[color=blue]{サンプル}
+\end{itemize}
+
+\item \verb/color={[/\meta{model}\verb/]/\meta{parameters}\verb/}/:
+下線などの色をカラーモデルが\linebreak \meta{model}で，
+パラメータが\meta{parameters}である色に設定します．
+
+\begin{itemize}
+  \item \verb/\uline[color={[gray].8},width=1pt]{/サンプル\verb/}/
+        → \uline[color={[gray].8},width=1pt]{サンプル}
+\end{itemize}
+
+\item \texttt{foreground}，\texttt{background}:
+\texttt{background}を指定した場合，
+下線などはそれらを付加する対象の文字列の背後に描かれます．
+\texttt{foreground}を指定した場合には，
+下線などはそれらを付加する対象の文字列の前面に描かれます
+（\texttt{foreground}がデフォルトです）．
+
+\begin{itemize}
+  \item \verb/\mline[color=red,width=2pt]{\textgt{/サンプル\verb/}}%/\\
+        \verb/\mline[color=red,width=2pt,background]{\textgt{/サンプ\\
+        ル\verb/}}/
+        → \mline[color=red,width=2pt]{\textgt{サンプル}}%
+           \mline[color=red,width=2pt,background]{\textgt{サンプル}}
+\end{itemize}
+\end{itemize}
+
+\verb/\uline/などの引数の中で別の\verb/\uline/などを用いた場合，
+それらに対するオプション指定は独立に適用されます（が，
+内側の\verb/\uline/などの引数には外側の\verb/\uline/などに由来する線も
+同時に付加される，というのは先の例でみたとおりです）．
+
+\begin{itemize}
+  \item \verb/\uline[width=.8pt,color=blue]{/オプションの\null
+           \verb/\uline[-3.5pt]{/独立性\verb/}/の例\verb/}/
+        → \uline[width=.8pt,color=blue]{オプションの
+               \uline[-3.5pt]{独立性}の例}
+\end{itemize}
+%
+この例では，外側の\verb/\uline/に対する線の太さ・色の指定は
+内側の\verb/\uline/には影響していないことに注意してください．
+
+また，下線などの位置・太さについては，それらを一律に変更するコマンドを
+用意しています．
+例えば，\verb/\uline/に対しては次の2個のコマンドが利用できます．
+\begin{itemize}
+  \item \verb/\ulineposition{/\meta{pos}\verb/}/:
+     \verb/\uline/による下線の位置のデフォルト値を寸法\meta{pos}に設定します．
+  \item \verb/\ulinewidth{/\meta{width}\verb/}/:
+     \verb/\uline/による下線の太さのデフォルト値を寸法\meta{width}に設定します．
+\end{itemize}
+%
+\verb/\mline/などの位置・太さのデフォルト値も，上記の\verb/\ulineposition/などの
+\texttt{uline}のところを変更した名称のコマンド\verb/\mlineposition/などを用いて
+設定できます．
+\verb/\ulineposition/などを用いた設定に関しては，次の2点に注意してください．
+\begin{itemize}
+\item \verb/\ulineposition/などによる設定は局所的なものです
+      （例えば，何らかの環境の内部での\verb/\ulineposition/などの設定は
+      その環境の外部には及びません）．
+\item \verb/\ulineposition/などによる設定は，
+      \verb/\uline/などの処理開始時における値が用いられます．
+      つまり，\verb/\uline/の引数の中で\verb/\ulineposition/または
+      \verb/\ulinewidth/を用いても「下線の位置・太さを途中で変える」ことは
+      できません（\verb/\mline/などについても同様です）．
+\end{itemize}
+
+
+なお，\verb/\uline/などに前記のオプション指定（のうちのいくつか）を
+最初から適用したコマンドが要る場合には，
+\begin{verbatim}
+\newcommand*\doubleredunderlines{\uline[lines=2,color=red]}
+\end{verbatim}
+（これは，赤い二重下線を作成するマクロ）という具合に
+\verb/\newcommand/で定義してください．
+あらゆる設定を考えて，それらのひとつひとつに固有の名称をもったマクロを
+割り振っていてはきりがないので，
+uline$--$パッケージ自身ではこの文書の冒頭で挙げた9個のみを用意します．
+
+
+\section{他のマクロを含むテキストに下線などをつける場合の注意}
+\subsection{一般のマクロへの対処法}\label{subsec:treatment-of-general-macros}
+先に述べたように，\verb/\uline/などの引数の中では（robustな）マクロは
+アルファベットと同様の扱いとなります．
+その一方で，\verb/\textbf/などの「引数をとるマクロ」は引数を考慮して扱う
+必要がありますし，\verb/\bfseries/などのように引数をとらなくとも
+下線などをつける対象にはならないマクロもあります．
+定義時に目に付いたマクロに関してはあらかじめ対処を施していますが，
+もちろん未対処のものもありますし，また，ユーザ定義のマクロにまで
+あらかじめ対処することはできません．
+
+そこで，\verb/\uline/などの引数の中に
+（必要に応じて\verb/\protect/をつけて）含めたときにエラーを生じるか
+意図通りには処理されていない場合には，次のように対処してください．
+
+\begin{itemize}
+\item \verb/\textcircled/のごとく引数を含めて1文字扱いにしてもよいもの:
+\verb/\mbox{\textcircled{c}}/のごとく1文字扱いにする範囲を
+\verb/\mbox/に入れてください
+（ただし，\verb/\textcircled/自身については対処済みです）．
+
+\item \verb/\bfseries/のごとく下線をつける対象（下線をつける対象は
+ボックスに入れられます）にはできないもの:
+\verb/\nonletter{\bfseries}/のごとく\verb/\nonletter/の引数にしてください
+（もっとも，\verb/\bfseries/自身についても対処済みです）．
+
+\item \verb/\textbf/の類の書体変更範囲を引数とするような書体変更マクロ:\\
+\verb/\textcommand{\textbf}{/書体変更範囲\verb/}/のごとく，
+書体変更マクロを\verb/\textcommand/の引数にしてください
+（なお，\verb/\textbf/自身についてはやはり対処済みです）．
+\end{itemize}
+
+例えば，
+\begin{verbatim}
+\DeclareTextFontCommand{\textbfit}{\bfseries\itshape}
+\end{verbatim}
+のようにボールド・イタリック体に変更するマクロ\verb/\textbfit/を
+定義したものとします．
+そのとき，単に\verb/\uline{\textbfit{bold italic}}/と記述したのでは
+（\verb/\uline/側では\verb/\textbfit/には対処していないため）エラーが生じます．
+この場合，\verb/\uline{\textcommand{\textbfit}{bold italic}}/のように変更すると，
+\uline{\textcommand{\textbfit}{bold italic}}という出力が得られます．
+
+\AddTextCommandInUline{\textbfit}
+
+さらに，今の\verb/\textbfit/のような
+「ただ1個の引数をとり，その引数が書体変更範囲となる」タイプの
+書体変更マクロについては，
+\begin{verbatim}
+\AddTextCommandInUline{\textbfit}
+\end{verbatim}
+のように\verb/\AddTextCommandInUline/を用いて，
+\verb/\textbfit/を\verb/\uline/などに対して書体変更マクロとして登録できます．
+実際，上記の記述で\verb/\textbfit/を登録した後では，
+単に\verb/\uline{\textbfit{bold italic}}/と記述してもエラーなく
+\uline{\textbfit{bold italic}}という出力が得られます．
+
+
+\subsection{\texttt{\string\index}，\texttt{\string\verb}などへの対処法}
+version 1.3.0（2006/12/01版）より，\verb/\uline/などの引数の中で
+\verb/\index/，
+\verb/\glossary/，\verb/\verb/を用いることが一応できます．
+具体的には，\verb/\uline/などが他のマクロ
+（例えば，\verb/\parbox/や\verb/\footnote/）の引数の中に入っていなければ，
+下線などを付加するテキストの中で，\verb/\index/，\verb/\glossary/，
+\verb/\verb/が使えます．
+例えば，「\verb|\uline{\verb/\uline/|マクロの使用例\verb/}/」という記述からは，
+「\uline{\verb/\uline/マクロの使用例}」という出力が得られます．
+ただし，\verb/\verb/などが「\verb/\uline/などの処理を行う前に
+他のマクロの引数として読み取られてしまう」場合には，従来どおり
+「\verb/\verb/の代わりに\verb/\texttt/（と\verb/\symbol/，\verb/\char/）で記述」，
+「\verb/\index/の引数を他のマクロの引数中で使える形（例えば，
+特殊文字に\verb/\string/を前置した形）で記述」といった対処法を用いてください．
+なお，\verb/\verb/などへの対処に伴い，\verb/\uline/などの処理に
+version 1.2.0以前の版に比べさらに時間がかかるようになったため，
+\verb/\index/，\verb/\glossary/，\verb/\verb/用の処理を取り止めるための
+パッケージオプション\texttt{noverb}も用意しています．
+
+
+\subsection{ユーザ定義マクロを用いる場合の注意}\label{subsec:usage-of-user-defined-macros}
+uline$--$パッケージでは\LaTeX{}自身あるいは既存のいくつかのパッケージが
+提供するマクロも\verb/\uline/の引数中で使えるようにしてはいますが，
+あくまで\textbf{\LaTeX{}または各種パッケージが提供する名称・意味のままで
+用いた場合}を念頭に置いています．
+第\ref{sec:options}\nobreak 節で例示したような
+\verb/\newcommand/で定義した単純なマクロは
+（そのマクロの定義中でuline$--$パッケージがサポートするコマンドのみを
+用いている場合には）たいてい\verb/\uline/などの引数中でも使えますが，
+うまくいかない場合にはパッケージなどが提供するコマンドを直接用いたうえで，
+必要に応じて\ref{subsec:treatment-of-general-macros}\nobreak 項で
+挙げた対処法を用いてください．
+
+
+\section{色付けに関する補足}\label{sec:color}
+\verb/\uline/などの引数の中では，
+colorパッケージが提供するマクロ\verb/\color/，\verb/\textcolor/，
+\verb/\colorbox/，\verb/\fcolorbox/を特別な記述をしなくても使用できます．
+
+\begin{itemize}
+  \item \verb/\uline{{\color{blue}/色に関する\verb/}/サンプル\verb/}/\\
+        → \uline{{\color{blue}色に関する}サンプル}
+
+  \item \verb/\uline{\textcolor{magenta}{/色に関する\verb/}/サンプル\verb/}/\\
+        → \uline{\textcolor{magenta}{色に関する}サンプル}
+
+  \item \verb/\uline{\colorbox{cyan}{/色に関する\verb/}/サンプル\verb/}/\\
+        → \uline{\colorbox{cyan}{色に関する}サンプル}
+
+  \item \verb/\uline{\fcolorbox{blue}{cyan}{/色に関する\verb/}/サンプル\verb/}/\\
+        → \uline{\fcolorbox{blue}{cyan}{色に関する}サンプル}
+\end{itemize}
+%
+この例では，\verb/\color/，\verb/\textcolor/はテキスト部分の色にしか影響しない
+（下線の色には影響していない）ことにも注意してください．
+
+また，\verb/\colorbox/はその引数のテキストを1個のボックスに入れるため，
+その途中での行分割ではできません．その一方で，
+\uline{\highlight{cyan}{行分割可能な背景色付きテキスト}を下線部に入れる}ために
+\verb/\uline/などの引数中でのみ使えるコマンド\verb/\highlight/を用意しています．
+使用法は，\verb/\colorbox/の代わりに\verb/\highlight/にするだけです
+（なお，下線の太さを0\,ptにすれば単に背景色だけがつきます）．
+
+ただし，今の\verb/\highlight/を用いたり，
+\verb/\uline/などを2重以上に用いて複数の色の下線などを重ねたりすると，
+行分割の際に不具合が生じることがあります．
+極端な例ですが，\verb/\kanjiskip/を10\,pt plus 3\,ptに設定した場合，
+次のような出力が生じます（「単語間スペース」に関しても同様のことが起こります）．
+\looseness=-1
+
+\begin{itemize}
+  \item \verb/\parbox[t]{16zw}{\uline{/背景色と\\
+              \verb/\highlight{cyan}{/下線を併用した\verb/}/%
+              テキストのサンプル\verb/}}/\\
+        → \parbox[t]{16zw}{\kanjiskip=10pt plus3pt
+              \uline{背景色と\highlight{cyan}{下線を併用した}テキストのサンプル}}
+
+  \item \verb/\parbox[t]{16zw}{\uline[0pt]{/複数の色の\\
+              \verb/\uline[color=blue]{/下線を用いた\verb/}/%
+              テキストのサンプル\verb/}}/\\
+        → \parbox[t]{16zw}{\kanjiskip=10pt plus3pt
+              \uline[0pt]{複数の色の\uline[color=blue]{下線を用いた}%
+              テキストのサンプル}}
+\end{itemize}
+
+このような場合，破線または波線を用いていない場合には
+プリアンブルで\verb/\UseAltLeaders/というコマンドを用いる（か，
+内部的には同じことですが，uline$--$パッケージの読み込み時に
+パッケージオプション\texttt{altleaders}を指定する）と出力が改善します
+（が，処理が非常に重たくなります）．
+ただし，\verb/\UseAltLeaders/は「非常に細かい繰り返しパターン」を
+使えることを前提としているので，\verb/\UseAltLeaders/指定時には
+（\verb/\udash/などによる）破線または波線は使えません．
+uline$--$パッケージが提供するマクロを用いるときには，
+破線または波線を用いる場合には複数の色の線を重ねずに済ませてください．
+
+
+\section{仕様に関する補足}
+この節の内容は\verb/\uline/などの「現時点での」仕様に基づくもので，
+過去の版とは異なっている場合あるいは今後の版で変更となる可能性があります．
+
+
+\subsection{破線あるいは波線の処理についての補足}
+uline$--$パッケージが提供する\verb/\udash/などによる破線・波線は
+繰り返しパターン（破線の場合は実線部分と破線部分，波線の場合は「ひとつの波」）を
+（単に\verb/\leaders/を用いて）繰り返して作成しています．
+ここで，破線あるいは波線をつける部分の長さが繰り返しパターンの幅の整数倍で
+なかったとしても「破線あるいは波線全体の幅をそれらの線をつける対象の幅に
+一致させる」という調整は行っていません（また，そのような調整は
+\TeX{}自身の機能では困難と思われるので，調整を行う予定もありません）．
+特に，破線部あるいは波線部の端点においては，次の例のように，
+最大で繰り返しパターンの幅の1/2だけ破線あるいは波線の開始・終了位置がずれます
+（したがって，破線の繰り返しパターンの実線部分・空白部分の長さの和は
+充分に小さくするのが無難です）．
+
+\begin{itemize}
+\item \verb/\udash[dashlength=1zw,dashgap=.1zw]{/破線のサンプル\verb/}/\\
+      → \udash[dashlength=1zw,dashgap=.1zw]{破線のサンプル}
+\item \verb/\udash[dashlength=.7zw,dashgap=.1zw]{/破線のサンプル\verb/}/\\
+      → \udash[dashlength=.7zw,dashgap=.1zw]{破線のサンプル}
+\end{itemize}
+
+
+\subsection{書体変更あるいは\texttt{\symbol{92}special}とペアカーニングの関係}\label{subsec:remarks-about-interchar/interword-glue}
+一般的な（ユーザが直接用いる）和文フォントメトリックにおいては，
+句読点や括弧類が隣り合う際にはそれらの間隔を調整してあります
+（例えば，「\mbox{…）\null ，}」ではなく，「\mbox{…），}」となります）．
+しかし，この調整は複数のフォントをまたがる場合にはなされず，
+「\verb/\textgt{/…ゴシック）\verb/}/，」という記述に対しては
+「\textgt{…ゴシック）}，」という具合に出力されます．
+また，色の変更がある場合には色の変更・復元に伴って\verb/\special/が
+挿入されるため，その\verb/\special/を挟む2個の文字は
+「隣り合っていない」かのように扱われてしまいます
+（例えば，「\verb/\textcolor{blue}{/…括弧類」\verb/}/，」と記述すると
+「\textcolor{blue}{…括弧類」}，」という出力が得られます）
+（\verb/\textcolor/に関してはグルーピングの問題もありますが，
+「…\verb/\color{blue}/…\verb/\normalcolor/ …」という形にしても
+状況は変わりません）．
+
+一方，\verb/\uline/などでは書体変更や色の処理は(p)\LaTeX{}に任せ，
+一連の文字・コマンドの字面だけを見て処理しています
+（きわめて大雑把に言えば，
+例えば「\verb/\uline{\textbf{/あ\verb/}/い\verb/}/」は
+「\verb/\textbf{\underline{/あ\verb/}}/\allowbreak
+\verb/\leaders/ \verb/\vrule.../ \verb/\hskip\kanjiskip/\allowbreak
+\verb/\underline{/い\verb/}/」（\verb/.../\,のところは\verb/\vrule/の
+heightとdepthの指定）のような感じに変換され，その後実際の組版処理に回されます）．
+その際，グループの開始・終了箇所をまたぐ文字の組についてもそれらの組み合わせを
+考慮しています．
+そのため，下線などをつけた場合とつけない場合とでは
+次の例に示すような相違が生じます．
+
+\begin{itemize}
+\item \<「下線」と\verb/\textgt{/「書体変更」\verb/}/（あるいは\\
+      \verb/\textcolor{blue}{/「色変更」\verb/}/）が関与する例\\
+      →
+      「下線」と\textgt{「書体変更」}（あるいは
+      \textcolor{blue}{「色変更」}）が関与する例
+\item \verb/\uline{/「下線」と\verb/\textgt{/「書体変更」\verb/}/（あるいは\\
+      \verb/\textcolor{blue}{/「色変更」\verb/}/）が関与する例\verb/}/\\
+      →
+      \uline{「下線」と\textgt{「書体変更」}（あるいは
+      \textcolor{blue}{「色変更」}）が関与する例}
+\item \<［比較用の例］\\
+     →「下線」と「書体変更」（あるいは「色変更」）が関与する例
+\end{itemize}
+
+書体変更も色付けも行っていない例と比較するとわかるように，
+結果的には（jisメトリックを使用している場合）概ね調整不要である方向に
+変わっています．
+もちろん，必要があれば\verb/\inhibitglue/（\verb/\</）
+あるいは\verb/\null/（= \verb/\hbox{}/）を用いて手動で補正できますが，
+単なる空の括弧（\verb/{}/）は（ペアカーニングに関しては）無視されるので
+適宜\verb/\null/に変更してください．
+
+\begin{itemize}
+\item    \verb/\uline{/（猫）\verb/{}/（ねこ）\verb/}/
+      → \uline{（猫）{}（ねこ）}
+\item    \verb/\uline{/（猫）\verb/\null/（ねこ）\verb/}/
+      → \uline{（猫）\null （ねこ）}
+\item \<［比較用］（猫）（ねこ）→（猫）（ねこ）\\
+      \hspace{4zw}（猫）\verb/{}/（ねこ）→（猫）{}（ねこ）\\
+      \hspace{4zw}（猫）\verb/\null/（ねこ）→（猫）\null（ねこ）
+\end{itemize}
+
+
+\subsection{下線などをつけるテキストの先頭・末尾に括弧類・句読点がある場合}
+現時点では，\verb/\uline/などの引数の先頭・末尾に括弧類・句読点がある場合，
+その括弧類・句読点に伴う1/2字分の空白は次のように取り扱われます．
+
+\begin{itemize}
+\item \verb/\uline/などの引数の先頭の開き括弧類に伴う空白:\\
+段落の先頭である場合には無視されます．
+段落の先頭ではない場合は\verb/\hspace/を用いて追加されます．
+
+\item \verb/\uline/などの引数の末尾の閉じ括弧類または句読点に伴う空白:\\
+原則として\verb/\hspace/を用いて追加されますが，直後に行頭禁則文字
+（のうち，特に\verb/\prebreakpenalty/が10000（以上）であるもの）が
+続いている場合には空白を入れません．
+\end{itemize}
+
+具体的には，次のようになります．
+\begin{itemize}
+\item    \<「\verb/\uline{/（サンプル）\verb/}/」
+      →「\uline{（サンプル）}」
+\item    …である\verb/\uline{/（第\verb/1/節参照）\verb/}/．
+      → …である\uline{（第1節参照）}．
+\item    \verb/\fbox{\uline{/（サンプル）\verb/}}/%
+      → \fbox{\uline{（サンプル）}}
+\end{itemize}
+%
+これらの例の最初のものの下線部の開き括弧の直前の空白は余分ですが，
+\verb/\uline/の直前にあるものを知ることはできないため自動的には対処できません．
+この場合は\verb/\uline/の引数の先頭に\verb/\inhibitglue/（\verb/\</）を入れると，
+次の例のように補正できます．
+%
+\begin{itemize}
+\item    \<「\verb/\uline{\</（サンプル）\verb/}/」
+      →「\uline{\<（サンプル）}」
+\end{itemize}
+%
+\verb/\fbox/の例についても同様で，\verb/\uline/の引数の先頭・末尾に
+\verb/\inhibitglue/（\verb/\</）を入れると，次のようになります．
+\begin{itemize}
+\item    \verb/\fbox{\uline{\</（サンプル）\verb/\<}}/%
+      → \fbox{\uline{\<（サンプル）\<}}
+\end{itemize}
+
+今までの例では括弧類などに伴う1/2字分の空白を下線部などの外に出しましたが，
+その空白部分も含めて下線を引く場合には，\verb/\uline/などの引数に
+適宜\verb/\null/を入れてください．
+例えば，先の\verb/\fbox/の例の\verb/\uline/の引数の
+先頭・末尾に\verb/\null/を追加すると次のようになります．
+
+\begin{itemize}
+\item    \verb/\fbox{\uline{\null/（サンプル）\verb/\null}}/%
+      → \fbox{\uline{\null（サンプル）\null}}
+\end{itemize}
+
+上記のことを用いて空白と下線などの関係を調整すると，
+次のようなことも一応できます．
+\begin{itemize}
+\item    \verb/\oline{/（上）\verb/\uline{/（中）\verb/}}\uline{/（下）\verb/}/\\
+      → \oline{（上）\uline{（中）}}\uline{（下）}
+\item    \verb/\oline{/（上）\verb/\uline{/（中）\verb/\<}}\uline{\null/（下）\verb/}/\\
+      → \oline{（上）\uline{（中）\<}}\uline{\null（下）}
+\end{itemize}
+
+
+\subsection{フォントlasy5の形式と波線の出力}
+波線用のマクロ\verb/\uwave/などでは波線の繰り返しパターンとして
+フォントlasy5の特定の文字を使用しています．
+ここで，このフォントlasy5の表示・印刷にMETAFONTソースから作成したPKフォントを
+用いるか，（BlueSky Research社による）Type1版を用いるかによって波線の
+「つながり具合」が異なるように思われます
+（なお，筆者はBaKoMaフォントについては（所有も使用もしていないため）
+検証していません）．
+そこで，type1cmパッケージを読み込んでいる場合
+（この場合にはType1版を使用するものとみなしています）と
+そうでない場合とで波線の繰り返しパターンに対する調整の仕方を変えています．
+その結果，type1cmパッケージを読み込んでいるか否かによって波線の出力が
+いくぶん異なってきます．
+また，type1cmパッケージを用いている状態で処理した波線をPKフォントを使う
+設定にしたプレビューアで眺める（あるいは，その逆の状況で眺める）と
+波線の繰り返しパターンの間に小さなすきまがある
+（あるいは，繰り返しパターンの重なりの部分がいくぶん太くなる）ように
+見えますので，注意してください．
+
+ただし，パッケージオプション\texttt{usepk}を指定すると，
+type1cmパッケージを読み込んでいるか否かによらずPKフォント用の調整を行います．
+また，パッケージオプション\texttt{usetype1}を指定すると，
+type1cmパッケージを読み込んでいるか否かによらずType1版用の調整を行います．
+
+
+\subsection{背景色と破線・波線を併用した場合，破線・波線などと他の線を重ね書きした場合}
+\verb/\mdash/などで付加した破線または波線が\verb/\highlight/による背景色に
+重なる場合，破線または波線の断片の出力と背景色の出力のタイミングの関係で，
+破線または波線の一部が途切れます．
+現時点の実装ではいたしかたありませんので，
+背景色を設定する部分では実線のみを用いてください．
+また，それと同じ理由で，破線・波線と他の実線・破線を重ね書きした場合，
+重ね書きされた破線・波線の一部が途切れることがあります．
+
+
+\subsection{欧文の自動ハイフネーション処理について}
+この文書の冒頭で述べたように，uline$--$パッケージのデフォルトでは
+\verb/\uline/などで下線などを付加したテキスト内での自動ハイフネーションは
+行われません．
+ただし，\textgt{実線}を付加するマクロ（\verb/\uline/，\verb/\mline/，
+\verb/\oline/）の引数中の，\textgt{アルファベットのみ}からなる語に関しては，
+パッケージオプション\texttt{autohyphenate}を適用すると
+自動ハイフネーションを試みます．
+なお，この処理は実験的なもので，しかも，内部で組版処理を複数回行います．
+それゆえ，複数回処理に伴う副作用を避けるため，
+アクセント記号用のコマンドなどのごく一部のコマンド以外の
+コマンドが含まれる文字列に対しては，自動ハイフネーションを取り止めます．
+%%% Note: autohyphenateオプション適用時には，ハイフネーション可能位置に
+%%% \- を書き込んだ状態にするため，行分割結果が下線などを付加しない場合とは
+%%% 変わってくることがある（この問題にマクロレベルの処理で対処するのは
+%%% おそらく困難）．
+%%% また，強制的に \- を挿入する（内部的にはそれだけではないが）ため
+%%% \- を挿入した箇所の前後の文字の間のカーニングが狂ってくるという問題もある
+%%% （こちらは検討課題）．
+%%% さらには，例えば official のような語は単純に of\-fi\-cial にするのではなく，
+%%% o\discretionary{f-}{fi}{ffi}\-cial のように扱うところだが，
+%%% （合字として扱われるか否かをマクロレベルの処理で取得するのは困難なので）
+%%% そこまでの処理はやらない．
+
+
+\subsection{数式中で用いた場合}
+\verb/\uline/などを数式中で用いた場合，\verb/\uline/などの引数は
+「行分割しない，テキストスタイルの単一の数式」として扱われます．
+例えば，\verb/$\uline{x} + y$/は\verb/$\mbox{\uline{$x$}} + y$/として扱われます．
+必要があれば，下線などをつける範囲での数式のスタイルを\verb/\displaystyle/などで
+明示的に指定してください（「現在処理中の数式のスタイル」は
+マクロレベルの処理では取得できないので，とりあえずテキストスタイルにしています）．
+また，下線などをつける範囲はそれ自身がひとつの数式として扱われるため，
+\verb/\uline/などの引数に「単独の\verb/\left/，\verb/\right/」を
+含めることはできません
+（単独の\verb/\left/，\verb/\right/を含む部分に下線などをつける場合には，
+ダミーの\verb/\left/，\verb/\right/を補ってください）．
+
+
+\subsection{下線部などで脚注・傍注を使用する場合}
+\verb/\uline/などで下線などを付加するテキストの中で
+「\verb/\footnote/による脚注」や「\verb/\marginpar/による傍注」
+および「endnotesパッケージが提供する\verb/\endnote/による末注」も使用できますが，
+\verb/\uline/などでの下線は複数段落にはわたらないことを前提としているため
+（つまり，\verb/\uline/などおよびその内部処理に用いるマクロには
+\verb/\long/指定は適用していないため）\verb/\uline/などの引数中の
+脚注テキストなどが複数段落にわたるとエラーが生じることがあります．
+その場合は，脚注テキスト中などでの改段落を\verb/\endgraf/で行うか，
+脚注テキストなどを下線部の外に出してください
+（必要があれば，下線などを脚注テキストなどの挿入箇所で分割して，
+挿入箇所の前後で別々に\verb/\uline/などを用いるとよいでしょう）．
+
+
+\subsection{urlパッケージを用いる場合}
+urlパッケージが提供する\verb/\url/コマンドおよび\verb/\urlstyle/コマンドは
+\verb/\uline/の引数中でも用いることができます．
+また，（ファイルurl.sty自体に解説されているような）
+\verb/\UrlRight/，\verb/\UrlLeft/などを用いたカスタマイズにも
+ある程度対応していますが，次の4点には注意が必要です．
+\begin{itemize}\parindent1zw
+\item
+\verb/\url/（および下記の\verb/\email/マクロのような「\verb/\url/風の」マクロ）は
+\verb/\verb/コマンドと類似の処理を必要とします．
+\verb/\url/の類を\verb/\uline/などの引数の中で用いる場合には，
+uline$--$パッケージにパッケージオプション\texttt{noverb}を適用しないでください．
+
+\item
+\verb/\UrlLeft//\verb/\UrlRight/の再定義時に数式用コマンドを用いる場合には，
+\begin{verbatim}
+\def\UrlLeft{\ensuremath{\triangleleft}}
+\def\UrlRight{\ensuremath{\triangleright}}
+\end{verbatim}
+という具合に\verb/\ensuremath/を適宜補ってください．
+この例のような場合，オリジナルの（すなわち\verb/\uline/などの
+引数の中ではないところで用いた）\verb/\url/に対しては\verb/\ensuremath/を
+用いても用いなくても構いません．
+
+\item
+ファイルurl.styには
+\begin{verbatim}
+\newcommand\email{\begingroup \urlstyle{rm}\Url}
+\end{verbatim}
+のようなマクロの例があります．
+この類の\verb/\Url/を直接用いた「\verb/\url/風の」ユーザ定義マクロを
+\verb/\uline/などの引数の中でも用いる場合には，あらかじめ
+\begin{verbatim}
+\AddUrlLikeCommandInUline{\email}
+\end{verbatim}
+という具合に\verb/\AddUrlLikeCommandInUline/を用いて
+「\verb/\uline/などの引数中で使える\verb/\url/風マクロ」として
+登録してください．
+
+ただし，（文字``\verb/#/''はマクロの処理に関して特殊な挙動を示すため）
+このような「\verb/\url/風」マクロの定義中で引数をもつようなマクロを
+定義または再定義した場合には，意図通りには処理されません．
+例えば，ファイルurl.styには
+\begin{verbatim}
+\def\UrlLeft#1\UrlRight{%
+   \special{html:<a href="#1">}#1\special{html:</a>}}
+\end{verbatim}
+という例がありますが，\verb/\UrlLeft/をこのように再定義するような
+「\verb/\url/風」マクロは\verb/\uline/などの引数の中では正しく処理されません．
+
+\item
+ファイルurl.styには，
+\begin{verbatim}
+\renewcommand\url{\begingroup
+   \def\UrlLeft{<url: }\def\UrlRight{>}%
+   \urlstyle{tt}\Url}
+\end{verbatim}
+のような\verb/\url/自身を再定義する例が載っていますが，
+uline$--$パッケージではこのような再定義を行った場合はサポートしていません
+\<（\ref{subsec:usage-of-user-defined-macros}\nobreak 項で述べたように，
+uline$--$パッケージでは，各種のコマンドを\textgt{オリジナルの意味のままで}%
+用いている場合を想定しています）．
+\end{itemize}
+
+
+\section{警告メッセージ}
+uline$--$パッケージが用意している警告メッセージとそれらが表示される状況
+および（典型的な）対処法を挙げます．
+なお，この節の記述においては警告メッセージの冒頭の
+``Package uline$--$ Warning:''という文字列と
+警告メッセージの2行目以降の行頭の``(uline$--$)''という文字列は省略しています．
+
+\begin{itemize}\parindent=1zw
+\item
+Contents in a scratch box register (\string\box0 etc.)\ may be broken
+on input line \dots.\par
+\verb/\uline/などの引数の中でボックスを貼り付ける場合，例えば
+\begin{verbatim}
+\newbox\tempbox%%% プリアンブルなどでただ一度行えば充分
+\setbox\tempbox\hbox{\verb/(^o^)/}
+\uline{sample: \copy\tempbox}
+\end{verbatim}
+のような記述を行う場合に，ユーザ自身で確保したボックスではなく
+0\nobreak 番から9番までの「一時使用用」ボックスを用いた場合のメッセージです．
+つまり，上記の例そのものではなく，例えば
+\begin{verbatim}
+\setbox0\hbox{\verb/(^o^)/}
+\uline{sample: \copy0}
+\end{verbatim}
+のような記述（ここでは0番のボックスを使ってしまっています）を行った場合の
+メッセージです．
+
+\verb/\uline/などでも「一時使用用」のボックスを用いるため，
+ユーザが記述した\verb/\copy0/などの記述を実行する前にそれらのボックスの中身が
+変わっている可能性があります．
+したがって，この警告が現れた場合には\verb/\newbox/で
+割り当てたボックスを用いてください．
+
+\item
+Package ``color'' is not loaded.
+Line color is ignored on input line \dots.\par
+colorパッケージを読み込んでいない状態で下線などの色を指定した場合のメッセージです．
+colorパッケージを読み込むか，下線などに対する色指定を取り止めてください．
+
+\item
+Only solid lines are available under \verb/\UseAltLeaders/
+or package option ``\texttt{altleaders}''.
+Option for leader type is ignored on input line \dots.\par
+\verb/\UseAltLeaders/コマンドまたは
+パッケージオプション\texttt{altleaders}の適用時には破線・波線を用いた場合の
+メッセージです．
+第\ref{sec:color}節で述べたように，\verb/\UseAltLeaders/コマンドまたは
+パッケージオプション\texttt{altleaders}を適用したときには
+実線を付加するコマンド（\verb/\uline/，\verb/\mline/，\verb/\oline/）のみを
+用いてください．
+%%% Note: 実際には，\uline などに type=dashline あるいは type=wavyline という
+%%% オプションを与えると破線・波線を出力できる（し，\udash などは
+%%% 単に type 指定を取り換えるだけという実装になっている）が，
+%%% この type オプションはあくまでも「内部処理用」オプションであり，
+%%% このオプションをユーザが直接用いた場合についてはサポートしない．
+
+\item
+Too many patterns are used simultaneously.
+Some patterns will be lost on input line \dots.\par
+破線または波線を付加するコマンドを重ねすぎた場合のメッセージです．
+破線または波線を付加するコマンドを重ねる段階数を減らすか，
+\verb/\UlineMaxPatterns/を用いて段階数の上限を増やしてください．
+
+\item
+``unbox'' operation is not supported.\par
+\verb/\uline/などの引数の中で\verb/\unhbox/，\verb/\unhcopy/，\verb/\unvbox/，
+\verb/\unvcopy/を用いた場合のメッセージです．
+また，上記のメッセージに続いて，
+``\verb/\unhbox/ is replaced with \verb/\box/ here''といった
+状況についての補足も表示されます．
+\verb/\uline/などは\verb/\unhbox/，\verb/\unhcopy/，\verb/\unvbox/，
+\verb/\unvcopy/には対応していませんので，\verb/\uline/などの引数の中では
+これらを用いずに済ませてください．
+\end{itemize}
+
+
+\section{更新履歴}
+\begin{itemize}\sloppy
+\item 2006/12/29 (v.1.9.0，v.1.9.1):
+\begin{itemize}
+  \item パッケージオプション\texttt{autohyphenate}適用時の
+        ハイフネーション処理の調整（v.1.9.0，v.1.9.1）．
+  \item \verb/\gtfamily/，\verb/\mcfamily/に対処し忘れていたので，
+        それらに対処（v.1.9.0）．
+  \item \verb/\UlineMaxPatterns/の導入（v.1.9.0）．
+\end{itemize}
+
+\item 2006/12/28 (v.1.8.0--v.1.8.2):
+\begin{itemize}
+  \item \verb/\uline/などの引数の中で脚注・傍注と\verb/\url/コマンド
+        （urlパッケージによるもの）を併用した場合の処理を修正（v.1.8.2）．
+  \item \verb/\discretionary/の内部処理を調整（v.1.8.1）．
+  \item urlパッケージ（の主要な機能）に対応（v.1.8.0）．
+  \item パッケージオプション\texttt{autohyphenate}適用時に，
+        アクセント記号付きアルファベットを含む語も
+        原則としてハイフネーション処理の対象とするように変更（v.1.8.0）．
+\end{itemize}
+
+\item 2006/12/22 (v.1.7.1，v.1.7.2):
+\begin{itemize}
+  \item パッケージオプション\texttt{autohyphenate}適用時に，
+        幅がハイフンの幅以下であるような文字が単語末にある語の
+        ハイフネーション可能位置の取得を誤るというバグを修正（v.1.7.2）．
+  \item パッケージオプション\texttt{autohyphenate}適用時に
+        penaltyなどの処理の際にエラーが生じるというバグを修正（v.1.7.1）．
+\end{itemize}
+
+\item 2006/12/21 (v.1.7.0):
+\begin{itemize}
+  \item パッケージオプション\texttt{autohyphenate}を導入．
+\end{itemize}
+
+\item 2006/12/14 (v.1.6.2，v.1.6.3):
+\begin{itemize}
+  \item \verb/\text.../\,の形の書体変更マクロによる自動イタリック補正に伴い
+        下線などが一部消えてしまうことがあるバグを修正．
+\end{itemize}
+
+\item 2006/12/08 (v.1.6.0，v.1.6.1):
+\begin{itemize}
+  \item \verb/\uline/などの引数の中での一部の代入の記述の処理の修正（v.1.6.1）．
+  \item 単語間グルーの処理の調整および\verb/\setlength/などのサポート（v.1.6.0）．
+\end{itemize}
+
+\item 2006/12/06 (v.1.5.0--v.1.5.3):
+\begin{itemize}
+  \item \verb/\uline/などをネストさせたときに内側の\verb/\uline/などの
+        引数中の\verb/\nonletter/の引数まで下線などを付加する
+        対象になっていたバグを修正（v.1.5.3）．
+  \item 縦組み時の段落の先頭における一部の文字（開き括弧類の場合？）の
+        寸法の取得に失敗することへのその場しのぎの対処（v.1.5.1，v.1.5.2）．
+  \item \verb/\ulineposition/，\verb/\ulinewidth/などの
+        カスタマイズコマンドの導入（v.1.5.0）．
+  \item kunten2eパッケージが提供するユーザマクロをサポート（v.1.5.0）．
+\end{itemize}
+
+\item 2006/12/05 (v.1.4.0):
+\begin{itemize}
+  \item \verb/\dotfill/，\verb/\hrulefill/および，
+        \verb/\Pifill/（pifontパッケージが提供するもの）をサポート．
+\end{itemize}
+
+\item 2006/12/02 (v.1.3.1，v.1.3.2):
+\begin{itemize}
+  \item \verb/\hrule/，\verb/\vrule/のパラメータ読み取りの処理のバグの修正
+        （v.1.3.2）．
+  \item v.1.3.0での変更点に関する動作調整および\verb/\hrule/，\verb/\vrule/の
+        サポート（ただし，\verb/\vrule/の処理は不完全）（v.1.3.1）．
+\end{itemize}
+
+\item 2006/12/01 (v.1.3.0):
+\begin{itemize}
+  \item \verb/\marginpar/を一応サポート．
+  \item \verb|\index|/\verb|\glossary|/\verb|\verb|を一応サポート．
+  \item 下線などをつけたテキスト内に下線類を含む脚注・傍注を用いたときに，
+        脚注などの中の下線部などが脚注などの周囲の線種の
+        影響を受けていたバグを修正．
+  \item 各種マクロのオプション引数の取り扱いに関するバグを修正．
+\end{itemize}
+
+\item 2006/11/19 (v.1.2.0):
+\begin{itemize}
+  \item グルーピングの終了処理のバグを修正．
+  \item sfkanbun，furikana，furiknktの各パッケージで提供される
+        マクロ（の一部，ユーザマクロと思われるもの）に対応．
+\end{itemize}
+
+\item 2006/11/18 (v.1.1.0--v.1.1.3):
+\begin{itemize}
+  \item 破線・波線の途中では\verb/\-/\,を無視するように変更（v.1.1.3）．
+  \item 色つきの下線などの禁則処理の調整およびその変更に伴うバグの修正（v.1.1.1，v.1.1.2）．
+  \item amsmathパッケージが\verb/\,/\,などを再定義していることに対処
+       （v.1.1.0）．
+  \item 一応，\verb/\uline/などを数式中でも使えるように変更（v.1.1.0）．
+\end{itemize}
+
+\item 2006/11/11 (v.1.0.2):
+\begin{itemize}
+  \item \verb/\pfmtname/が定義されていない場合，
+        各種の寸法のデフォルト値の中では単位zw，zhが用いられないように変更．
+  \item \verb/\bou/（plextパッケージによるもの）の処理を修正．
+\end{itemize}
+
+\item 2006/11/09 (v.1.0.1):
+\begin{itemize}
+  \item \verb/\ref/，\verb/\pageref/をrobustなマクロにしている場合に対処．
+  \item \texttt{foreground}指定と\texttt{background}指定が混在する場合の
+        文字間・単語間グルー部分の処理を修正．
+\end{itemize}
+
+\item 2006/10/25 (v.1.0.0):
+  公開
+\end{itemize}
+\end{document}
+
+
