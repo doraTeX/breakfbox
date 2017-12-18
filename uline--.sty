@@ -1,0 +1,3646 @@
+%%% 「単純」な下線類マクロ
+%%% (C) 2006 T. Yoshinaga
+%%%
+%%% このファイルは「現状のまま」で提供され，
+%%% このファイルが使用目的に沿った機能を提供することは保証されません．
+%%% また，このファイルを使用したことあるいは使用できなかったことにより，
+%%% 直接的あるいは間接的に生じたいかなる損害に対しても，
+%%% このファイルの作成者はいかなる責任も負わないものとします．
+%%%
+%%% 改変・再配布について:
+%%% このファイルの作成者以外がこのファイルの改変版を
+%%% このファイルと同一の名称で使用することあるいは再配布することを禁じます．
+%%% ただし，「改変を施さない状態での再配布」，「改変版の別ファイル名での
+%%% 使用・再配布」には制限は設けません．
+%%%
+%%% 用法:
+%%% \uline[<options>]{<text>}
+%%% <options>:
+%%% position=<dimen>:  下線などの基準位置を寸法 <dimen> のところに設定
+%%%                    （ベースラインのところが 0ptで，横組み時の上向きが正）
+%%% lines=<number>:    下線などの本数を正整数 <number> に設定
+%%% width=<dimen>:     下線などの太さを寸法 <dimen> に設定
+%%% linegap=<dimen>:   2 重以上の下線などでの線の間隔を寸法 <dimen> に設定
+%%% dashlength=<size>: 破線の繰り返しパターンの実線部分の長さを <size> に設定
+%%% dashgap=<gap>:     破線の繰り返しパターンの空白部分の長さを <gap> に設定
+%%% foreground:        下線などを，それらを付加する対象の文字列の前面に描画
+%%% background:        下線などを，それらを付加する対象の文字列の背後に描画
+%%% color=<colorname>: 下線などの色を <colorname>（色名）に設定
+%%% color={[<model>]<parameters>}:
+%%% 下線などの色を \color[<model>]{<parameters>} で指定される色に設定
+%%%
+%%% \mline，\oline についても書式は同じです（単に \uline が下線を引くのに対し，
+%%% \mline，\oline はそれぞれ打ち消し線，上線を引くのが
+%%% デフォルト設定という程度の違いしかありません）．
+%%% また，\uline などについて line => dash とすれば破線版に，
+%%% line => wave とすれば波線版になります．
+%%% 例えば，\udash は破線の下線を作成します．
+%%% 詳しい用法・用例および注意事項に関してはマニュアル（uline--.tex）を
+%%% 参照してください．
+%%% \version{2006/12/29b}
+\ProvidesPackage{uline--}[2006/12/29 v.1.9.1 ``simple'' underlines]
+\edef\@uline@temp{\catcode"1B=\number\catcode"1B\relax}
+\catcode"1B=12\relax
+\newif\if@uline@altglue \@uline@altgluefalse
+\def\UseAltLeaders{\@uline@altgluetrue}
+\@onlypreamble\UseAltLeaders
+%%% \UseAltLeaders は，複数の色の下線を重ねる場合などについて下線の出力が
+%%% 狂う場合にリーダー部の処理を（色の処理に関しては）無難なものに
+%%% 取り換える指示を行うマクロです（ただし，処理が重たくなり，また，
+%%% 下線部に \@uline@altglue@unit の 2 倍未満の途切れが生じることがあります）．
+%%% また，\UseAltLeaders はプリアンブルコマンドにしなくてもよいのですが，
+%%% \nonletter{\protect\UseAltLeaders} のような記述を用いて
+%%% 内側の \uline などにだけ \UseAltLeaders 指定を適用させると
+%%% 処理が破綻するため，念のためにプリアンブルコマンドとしています．
+\DeclareOption{altleaders}{\@uline@altgluetrue}
+\let\@uline@uwave@adjust\relax
+\DeclareOption{usepk}{\def\@uline@uwave@adjust{\kern-.3\p@}}
+\DeclareOption{usetype1}{\let\@uline@uwave@adjust\@empty}
+\DeclareOption{noverb}{%
+   \AtEndOfPackage{\def\@uline@preprocess{\@uline@main@process}}}
+\DeclareOption{autohyphenate}{%
+   \AtEndOfPackage{\let\@uline@hyphenate\@uline@hyphenate@}}
+\ProcessOptions\relax
+\DeclareRobustCommand*\uline{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@ulineposition@tdir \else \@ulineposition@ydir \fi}%
+   \let\@uline@default@thickness\@ulinewidth
+   \let\@uline@default@options\@empty
+   \@testopt{\@uline b}{}}
+\DeclareRobustCommand*\mline{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@mlineposition@tdir \else \@mlineposition@ydir \fi}%
+   \let\@uline@default@thickness\@mlinewidth
+   \let\@uline@default@options\@empty
+   \@testopt{\@uline c}{}}
+\DeclareRobustCommand*\oline{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@olineposition@tdir \else \@olineposition@ydir \fi}%
+   \let\@uline@default@thickness\@olinewidth
+   \let\@uline@default@options\@empty
+   \@testopt{\@uline t}{}}
+\DeclareRobustCommand*\udash{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@udashposition@tdir\else \@udashposition@ydir \fi}%
+   \let\@uline@default@thickness\@udashwidth
+   \def\@uline@default@options{type=dashline}%
+   \@testopt{\@uline b}{}}
+\DeclareRobustCommand*\mdash{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@mdashposition@tdir \else \@mdashposition@ydir \fi}%
+   \let\@uline@default@thickness\@mdashwidth
+   \def\@uline@default@options{type=dashline}%
+   \@testopt{\@uline c}{}}
+\DeclareRobustCommand*\odash{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@odashposition@tdir \else \@odashposition@ydir \fi}%
+   \let\@uline@default@thickness\@odashwidth
+   \def\@uline@default@options{type=dashline}%
+   \@testopt{\@uline t}{}}
+\DeclareRobustCommand*\uwave{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@uwaveposition@tdir\else \@uwaveposition@ydir \fi}%
+   \let\@uline@default@thickness\@uwavewidth
+   \def\@uline@default@options{type=wavyline}%
+   \@testopt{\@uline b}{}}
+\DeclareRobustCommand*\mwave{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@mwaveposition@tdir \else \@mwaveposition@ydir \fi}%
+   \let\@uline@default@thickness\@mwavewidth
+   \def\@uline@default@options{type=wavyline}%
+   \@testopt{\@uline c}{}}
+\DeclareRobustCommand*\owave{%
+   \edef\@uline@linepos@default{%
+      \iftdir \@owaveposition@tdir \else \@owaveposition@ydir \fi}%
+   \let\@uline@default@thickness\@owavewidth
+   \def\@uline@default@options{type=wavyline}%
+   \@testopt{\@uline t}{}}
+\@tfor\@tempa:={line}{dash}{wave}\do{%
+   \@tfor\@tempb:=umo\do{%
+      \edef\@tempc{%
+         \noexpand\DeclareRobustCommand*%
+            \expandafter\noexpand\csname \@tempb\@tempa position\endcsname[1]%
+            {\noexpand\@uline@set@defaultposition{\@tempb\@tempa}{##1}}%
+         \noexpand\DeclareRobustCommand*%
+            \expandafter\noexpand\csname \@tempb\@tempa width\endcsname[1]%
+            {\edef\expandafter
+               \noexpand\csname @\@tempb\@tempa width\endcsname{##1}}}%
+      \@tempc
+      \csname \@tempb\@tempa width\endcsname{.4pt}}}
+\def\@uline@set@defaultposition#1#2{%
+   \expandafter\edef\csname @#1position@tdir\endcsname{#2}%
+   \expandafter\edef\csname @#1position@ydir\endcsname{#2}}
+\def\@ulineposition@tdir{-.6zw}
+\def\@ulineposition@ydir{-2pt}
+\def\@mlineposition@tdir{0pt}
+\edef\@mlineposition@ydir{%
+   \expandafter\ifx\csname pfmtname\endcsname\relax .5ex\else .38zh\fi}
+\def\@olineposition@tdir{.6zw}
+\edef\@olineposition@ydir{%
+   \expandafter\ifx\csname pfmtname\endcsname\relax 2ex\else 1zh\fi}
+\@tfor\@tempa:={dash}{wave}\do{%
+   \@tfor\@tempb:=umo\do{%
+      \expandafter\let
+         \csname @\@tempb\@tempa position@tdir\expandafter\endcsname
+         \csname @\@tempb lineposition@tdir\endcsname
+      \expandafter\let
+         \csname @\@tempb\@tempa position@ydir\expandafter\endcsname
+         \csname @\@tempb lineposition@ydir\endcsname}}
+\def\setulinestrut#1#2{%%% #1: height, #2: depth
+   \def\@ulinestrutht{#1}%
+   \def\@ulinestrutdp{#2}}
+\setulinestrut{}{}%%% use default (see \@uline@setstrut)
+\expandafter\ifx\csname pfmtname\endcsname\relax
+   \def\@uline@setstrut{%
+      \ifx\@ulinestrutht\@empty
+         \def\@uline@strutht{.85\ht\strutbox}%
+      \else
+         \let\@uline@strutht\@ulinestrutht
+      \fi
+      \ifx\@ulinestrutdp\@empty
+         \def\@uline@strutdp{.85\dp\strutbox}%
+      \else
+         \let\@uline@strutdp\@ulinestrutdp
+      \fi}
+   \expandafter\let\csname iftdir\expandafter\endcsname\csname iffalse\endcsname
+   \let\tbaselineshift\dimen@ii
+   \let\@uline@sample@jchar\@empty
+   %%% 以下の 4 個はこちらに分岐している場合には用いられないはずですが，
+   %%% 念のためにダミーを用意します．
+   \def\prebreakpenalty{\z@ \begingroup \afterassignment\endgroup \count@=}
+   \let\postbreakpenalty\prebreakpenalty
+   \def\xspcode#1{\z@}
+   \let\inhibitxspcode\xspcode
+\else
+   \edef\@uline@setstrut{%
+      \expandafter\noexpand\csname iftdir\endcsname
+         \expandafter\noexpand\csname ifmdir\endcsname
+            \def\noexpand\@tempa{.8}%
+            \def\noexpand\@tempb{\zstrutbox}%
+         \expandafter\noexpand\csname else\endcsname
+            \def\noexpand\@tempa{.8}%
+            \def\noexpand\@tempb{\tstrutbox}%
+         \expandafter\noexpand\csname fi\endcsname
+      \expandafter\noexpand\csname else\endcsname
+         \def\noexpand\@tempa{.85}%
+         \def\noexpand\@tempb{\strutbox}%
+      \expandafter\noexpand\csname fi\endcsname
+      \noexpand\ifx\noexpand\@ulinestrutht\noexpand\@empty
+         \edef\noexpand\@uline@strutht{\noexpand\@tempa\ht\noexpand\@tempb}%
+      \noexpand\else
+         \let\noexpand\@uline@strutht\noexpand\@ulinestrutht
+      \noexpand\fi
+      \noexpand\ifx\noexpand\@ulinestrutdp\noexpand\@empty
+         \edef\noexpand\@uline@strutdp{\noexpand\@tempa\dp\noexpand\@tempb}%
+      \noexpand\else
+         \let\noexpand\@uline@strutdp\noexpand\@ulinestrutdp
+      \noexpand\fi}
+   \def\@uline@sample@jchar{猫}%%% タイプ 0 の文字なら何でもよい
+\fi
+\newif\if@uline@check@first@glue
+\newif\if@uline@inhibitglue
+\newif\if@uline@group@head
+\let\@uline@first@item@after@group\@empty
+\let\@uline@text@command\text@command
+\def\@uline@inner@text@command#1{%
+   \let\check@icl\@empty
+   \let\check@icr\@empty}
+\def\@uline{%
+   \ifmmode \expandafter\@math@uline
+   \else    \expandafter\@text@uline
+   \fi}
+\def\@text@uline#1[#2]{%
+   \ifvmode
+      \leavevmode
+      \@uline@check@first@gluefalse
+   \else
+      \@uline@check@first@gluetrue
+   \fi
+   \iftdir \setbox\z@\hbox{\@uline@sample@jchar}\fi
+   \begingroup
+   \@uline@init@data{#1}{#2}%
+   \@uline@init@extra@data
+   \def\@uline@main@process{\@text@uline@}%
+   \@uline@preprocess}
+\def\@text@uline@#1{%
+   \begingroup
+   \def\@tempa{\@text@uline@@{#1}}%
+   \futurelet\@uline@first@item@after@group\@tempa}
+\def\@text@uline@@#1{%
+   \global\let\@uline@gtempa= %%% Do NOT remove this space.
+      \@uline@first@item@after@group
+   \@uline@redefine@commands
+   \@uline@redefine@extra@commands
+   \protected@edef\@tempa{#1}%
+   \expandafter\endgroup\expandafter\@text@uline@@@
+   \expandafter\@@uline\@tempa\@nnil
+   \let\@uline@text@command\@uline@inner@text@command
+   \@uline@restore@UrlCondition
+   \expandafter\@uline@text
+   \expandafter\endgroup\@uline@last@glue}
+\def\@text@uline@@@{%
+   \let\@uline@first@item@after@group= %%% Do NOT remove this space.
+      \@uline@gtempa
+   \global\let\@uline@gtempa\relax}
+\def\@math@uline#1[#2]{%
+   \hbox\bgroup
+      \@uline@init@data{#1}{#2}%
+      \@uline@init@extra@data
+      \def\@uline@main@process{\@math@uline@}%
+      \@uline@preprocess}
+\def\@math@uline@#1{%
+      \let\@uline@text@command\text@command
+      \@uline@item{$#1$}%
+      \egroup}
+\def\@uline@preprocess{%
+   \@tempcnta\m@ne
+   \afterassignment\@ulinepre@bgroup
+   \let\let@token=}
+\def\@ulinepre@bgroup{%
+   \advance\@tempcnta\@ne
+   \toks@{}%
+   \@ulinepre@loop}
+\def\@ulinepre@loop{\futurelet\let@token\@ulinepre@loop@}
+\def\@ulinepre@loop@{%
+   \ifx\let@token\@sptoken       \let\@tempa\@ulinepre@addspace
+   \else\ifx\let@token\bgroup    \let\@tempa\@ulinepre@xbgroup
+   \else\ifx\let@token\egroup    \let\@tempa\@ulinepre@egroup
+   \else\ifx\let@token\verb      \let\@tempa\@ulinepre@process@verb
+   \else\ifx\let@token\index     \let\@tempa\@ulinepre@process@index
+   \else\ifx\let@token\glossary  \let\@tempa\@ulinepre@process@glossary
+   \else                         \let\@tempa\@ulinepre@checktoken
+   \fi\fi\fi\fi\fi\fi
+   \@tempa}
+\let\@uline@urllike@cmds\@empty
+\def\@ulinepre@checktoken#1{%
+   \def\@ulinepre@next{\@ulinepre@addtoken}%
+   \def\@tempa{#1}%
+   \@tfor\@tempb:=\nonletter\url\Url\do{%
+      \ifx\@tempa\@tempb
+         \edef\@ulinepre@next{%
+            \expandafter\noexpand
+               \csname
+                  @ulinepre@%
+                  \expandafter\expandafter\expandafter\@gobble
+                  \expandafter\string\@tempb
+               \endcsname}%
+         \@break@tfor
+      \fi}%
+   \def\@tempb{\@tfor\@tempb:=}%
+   \expandafter\@tempb\@uline@urllike@cmds\do{%
+      \ifx\@tempa\@tempb
+         \def\@ulinepre@next{\@ulinepre@urllike}%
+         \@break@tfor
+      \fi}%
+   \@ulinepre@next#1}
+\def\@ulinepre@addtoken#1{%
+   \toks@\expandafter{\the\toks@#1}%
+   \@ulinepre@loop}
+\def\@ulinepre@nonletter#1#2{%
+   \toks@\expandafter{\the\toks@#1{#2}}%
+   \@ulinepre@loop}
+\begingroup
+\def\:{\def\@ulinepre@addspace}
+\expandafter\endgroup\: {%
+   \toks@\expandafter\expandafter\expandafter{%
+      \expandafter\the\expandafter\toks@\space}%
+   \@ulinepre@loop}
+\def\@ulinepre@xbgroup{%
+   \begingroup
+   \afterassignment\@ulinepre@bgroup
+   \let\let@token=}
+\def\@ulinepre@egroup{%
+   \ifnum\@tempcnta>\z@ \expandafter\@ulinepre@egroup@
+   \else                \expandafter\@ulinepre@endprocess
+   \fi}
+\def\@ulinepre@egroup@{%
+   \expandafter\endgroup
+   \expandafter\toks@\expandafter\expandafter\expandafter{%
+      \expandafter\the\expandafter\toks@\expandafter{\the\toks@}}%
+   \afterassignment\@ulinepre@loop
+   \let\let@token=}
+\def\@ulinepre@endprocess{%
+   \afterassignment\@ulinepre@endprocess@
+   \let\let@token=}
+\def\@ulinepre@endprocess@{%
+   \expandafter\@uline@main@process\expandafter{\the\toks@}}
+\def\@ulinepre@expandit#1{\expandafter\@ulinepre@loop#1}
+\def\@ulinepre@process@verb#1{%
+   \begingroup
+   \let\do\@makeother \dospecials
+   \let\do\@uline@do@noligs \verbatim@nolig@list
+   \@ifstar
+      {\@ulinepre@process@verb@\@uline@sobeyspaces}%
+      {\@ulinepre@process@verb@\@uline@obeyspaces}}
+\begingroup
+\catcode`\ =\active%
+\gdef\@uline@obeyspaces{\catcode`\ \active\def {\noexpand~}}%
+\gdef\@uline@sobeyspaces{\catcode`\ \active\def {\char32\relax}}%
+\endgroup
+\def\@uline@do@noligs#1{%
+  \catcode`#1\active
+  \begingroup
+     \lccode`\~`#1\relax
+     \lowercase{\endgroup
+        \edef~{\noexpand\noexpand\noexpand\leavevmode
+           \kern\z@\char\number`#1\relax}}}
+\def\@ulinepre@process@verb@#1#2{%
+   \def\@tempa##1#2{%
+      \def\@tempa{##1}%
+      \@ulinepre@process@verb@@}%
+   #1\@tempa}
+\def\@ulinepre@process@verb@@{%
+   \edef\@tempa{%
+      \def\noexpand\@tempa{%
+         \noexpand\texttt{\@tempa}}}%
+   \expandafter\endgroup\@tempa
+   \toks@\expandafter\expandafter\expandafter{%
+      \expandafter\the\expandafter\toks@\@tempa}%
+   \@ulinepre@loop}
+\def\@ulinepre@process@index#1{%
+   \begingroup
+   \@sanitize
+   \@ulinepre@process@index@}
+\def\@ulinepre@process@index@#1{%
+   \endgroup
+   \toks@\expandafter{\the\toks@\index{#1}}%
+   \@ulinepre@loop}
+\def\@ulinepre@process@glossary#1{%
+   \begingroup
+   \@sanitize
+   \@ulinepre@process@glossary@}
+\def\@ulinepre@process@glossary@#1{%
+   \endgroup
+   \toks@\expandafter{\the\toks@\glossary{#1}}%
+   \@ulinepre@loop}
+\def\@ulinepre@urllike#1{%
+   \toks@\expandafter{\the\toks@
+      \noexpand\@uline@execit{\noexpand\@uline@save@UrlCondition}}%
+   \expandafter\@ulinepre@loop#1}
+\def\@ulinepre@url{\@ulinepre@addtoken}
+\def\@ulinepre@url@{%
+   \let\@ulinepre@url@extra@tokens\@empty
+   \@ulinepre@url@@}
+\def\@ulinepre@Url{\@ulinepre@addtoken}
+\def\@ulinepre@Url@{%
+   \def\@ulinepre@url@extra@tokens{%
+      \endgroup
+      \noexpand\@uline@execit{\noexpand\@uline@restore@UrlCondition}}%
+   \@ulinepre@url@@}
+\def\@uline@save@UrlCondition{%
+   \let\@uline@prev@UrlLeft\UrlLeft
+   \let\@uline@prev@UrlRight\UrlRight
+   \let\@uline@prev@UrlFont\UrlFont
+   \let\@uline@prev@UrlOrds\UrlOrds
+   \let\@uline@prev@UrlBreaks\UrlBreaks
+   \let\@uline@prev@UrlBigBreaks\UrlBigBreaks
+   \let\@uline@prev@UrlNoBreaks\UrlNoBreaks
+   \let\@uline@prev@UrlSpecials\UrlSpecials}
+\def\@uline@restore@UrlCondition{%
+   \let\UrlLeft\@uline@prev@UrlLeft
+   \let\UrlRight\@uline@prev@UrlRight
+   \let\UrlFont\@uline@prev@UrlFont
+   \let\UrlOrds\@uline@prev@UrlOrds
+   \let\UrlBreaks\@uline@prev@UrlBreaks
+   \let\UrlBigBreaks\@uline@prev@UrlBigBreaks
+   \let\UrlNoBreaks\@uline@prev@UrlNoBreaks
+   \let\UrlSpecials\@uline@prev@UrlSpecials}
+\def\@ulinepre@url@@#1{%%% #1: \url/\Url
+   \begingroup
+   \let\do\@makeother \dospecials
+   \catcode`\{=\@ne \catcode`\}=\tw@ \catcode`\ =10\relax
+   \@ifnextchar\bgroup\@ulinepre@normal@url\@ulinepre@verblike@url}
+\def\@ulinepre@normal@url#1{%
+   \def\@tempa{#1}\@onelevel@sanitize\@tempa
+   \edef\@tempa{%
+      \endgroup
+      \def\noexpand\@tempa{\noexpand\url{\@tempa}}%
+      \noexpand\@ulinepre@url@@@}%
+   \@tempa}
+\def\@ulinepre@verblike@url#1{%
+   \catcode`\{=12 \catcode`\}=12\relax
+   \def\@tempa##1#1{\@ulinepre@normal@url{##1}}%
+   \@tempa}
+\def\@ulinepre@url@@@{%
+   \toks@\expandafter\expandafter\expandafter{%
+      \expandafter\the\expandafter\toks@\@tempa}%
+   \ifx\@ulinepre@url@extra@tokens\@empty\else
+      \toks@\expandafter\expandafter\expandafter{%
+         \expandafter\the\expandafter\toks@\@ulinepre@url@extra@tokens}%
+   \fi
+   \@ulinepre@loop}
+\AtBeginDocument{%
+   \@ifpackageloaded{url}%
+      {\let\@ulinepre@url\@ulinepre@url@
+       \let\@ulinepre@Url\@ulinepre@Url@
+       \def\@tempa#1#2#3{%
+          \@namedef{@uline@defaultCC@in@url\string#1}{#2}%
+          \@namedef{@uline@default@in@url\string#1}{#3}}%
+       \@tfor\@tempb:=%
+          {\<3{\langle}}{\>1{\mathbin{\rangle}}}%
+          {\_1{\_\penalty\@m}}{\|1{\mid}}%
+          {\{3{\lbrace}}{\}1{\mathbin{\rbrace}}}%
+          {\\1{\mathbin{\backslash}}}{\ 0{\ }}%
+          {\~0{\raise.6ex\hbox{\m@th$\scriptstyle\sim$}}}%
+          \do{\expandafter\@tempa\@tempb}%
+       \@for\@tempa:=%
+          UrlOrds,UrlBreaks,UrlBigBreaks,UrlNoBreaks,UrlSpecials%
+          \do{\@ifundefined\@tempa{\@namedef\@tempa{}}\relax}%
+       \count@\z@
+       \@whilenum\count@<\@cclvi\do{%
+          \@namedef{@uline@urlCC\the\count@}{0}%%% urlCC: character class in \url
+          \advance\count@\@ne}
+       \@uline@append@tokens\@uline@init@extra@data{\@uline@save@UrlCondition}%
+       \@uline@append@tokens\@uline@redefine@extra@commands{%
+          \let\UrlLeft\relax\let\UrlRight\relax}}%
+      \relax}
+\def\@uline@init@data#1#2{%
+   \@uline@inhibitgluefalse
+   \@uline@group@headfalse
+   \@suppress@hyphenationfalse
+   \@uline@set@option{#1}{#2}%
+   \@uline@setstrut
+   \if@uline@altglue \let\@uline@glue\@uline@altglue \fi
+   \escapechar`\\%
+   \let\@uline@prevjchar\relax%%% 読み取り中の箇所の直前の和文文字（未出力）
+   \let\@uline@prevword\@empty%%% 読み取り中の箇所の直前の非和文文字の列（未出力）
+   \let\@uline@previtem\@empty%%% 読み取り中の箇所の直前の文字（文字間グルーの測定などに使用）
+   \let\@uline@hyphen@stat\@empty
+   \def\@uline@spacefactor{1000}%
+   \let\@uline@curr@f@encoding\f@encoding
+   \edef\@uline@curr@hyphenchar{\the\hyphenchar\font}%
+   \edef\@uline@curr@fontdimeni{\the\fontdimen1\font}%
+   \let\@uline@outer@slant\@uline@curr@fontdimeni
+   \edef\@uline@curr@fontdimenii{\the\fontdimen2\font}%
+   \edef\@uline@curr@fontdimeniii{\the\fontdimen3\font}%
+   \edef\@uline@curr@fontdimeniv{\the\fontdimen4\font}%
+   \edef\@uline@curr@fontdimenvii{\the\fontdimen7\font}%
+   \let\@uline@extra@fontcommands\@empty
+   \let\@uline@saved@protect\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@migrating@item\@empty
+   \let\@uline@last@glue\@empty
+   \let\@uline@text\@empty}
+\let\@uline@init@extra@data\@empty
+\def\@uline@redefine@commands{%
+   \def\({$}\def\){$}%
+   \let\@uline@reset@pattern\@empty
+   \def\@uline@item{\noexpand\@uline@item}%
+   \def\@uline@glue{\noexpand\@uline@glue}%
+   \def\@uline@leaders{\noexpand\@uline@leaders}%
+   \def\@uline@setcolor{\noexpand\@uline@setcolor}%
+   \def\@uline@bou@init{\noexpand\@uline@bou@init}%
+   \def\nonletter##1{\noexpand\nonletter{##1}}%
+   \def\textcommand##1{\noexpand\textcommand{##1}}%
+   \def\normalcolor{\noexpand\normalcolor}%
+   \let\highlight\relax
+   \def\ulineafterspace{\hspace}%
+   \def\begin{\noexpand\begin}%
+   \def\end{\noexpand\end}%
+   \def\footnote{\nobreak\protect\footnote}%
+   \def\footnotemark{\nobreak\protect\footnotemark}%
+   \def\endnote{\nobreak\protect\endnote}%
+   \def\endnotemark{\nobreak\protect\endnotemark}%
+   \def\@noligs{\noexpand\@noligs}%
+   \def\@vobeyspaces{\noexpand\@vobeyspaces}%
+   \def\,{\noexpand\,}\let\thinspace\,%
+   \def\:{\noexpand\:}\let\medspace\:%
+   \def\;{\noexpand\;}\let\thickspace\;%
+   \def\!{\noexpand\!}\let\negthinspace\!%
+   \def\negmedspace{\noexpand\negmedspace}%
+   \def\negthickspace{\noexpand\negthickspace}%
+   \def\@tempa{\@tfor\@tempa:=}%
+   \expandafter\@tempa\@uline@commands@to@protect\do{%
+      \expandafter\expandafter\expandafter\def
+      \expandafter\@tempa\expandafter{\expandafter\protect\@tempa}}}
+\let\@uline@redefine@extra@commands\@empty
+\def\nonletter#1{#1}
+\def\textcommand#1{#1}
+\def\ulineafterspace#1{%
+   \begingroup
+   \def\@uline@temp{\hspace{#1}}%
+   \futurelet\let@token\@ulineafterspace}
+\def\@ulineafterspace{%
+   \def\@uline@next{\@ulineafterspace@finish}%
+   \if\noexpand\let@token\relax\else
+      \ifx\let@token\bgroup\else
+         \ifx\let@token\egroup\else
+            \ifx\let@token\@sptoken\else
+               \def\@uline@next{\@@ulineafterspace}%
+            \fi
+         \fi
+      \fi
+   \fi
+   \@uline@next}
+\def\@@ulineafterspace#1{%
+   \def\@tempa{#1}\@onelevel@sanitize\@tempa
+   \edef\@tempa{\count@=`\@tempa\relax}\@tempa
+   \ifnum\prebreakpenalty\count@<\@M\else \let\@uline@temp\@empty \fi
+   \@ulineafterspace@finish
+   #1}
+\def\@ulineafterspace@finish{\expandafter\endgroup\@uline@temp}
+\def\@uline@set@option#1#2{%
+   \def\@uline@line@alignment{#1}%
+   \def\@uline@leader@type{solidline}%
+   \def\@uline@linespec@type{rules}%
+   \def\@uline@layer{foreground}%
+   \let\@uline@linepos\@uline@linepos@default
+   \def\@uline@lines{\@ne}%
+   \edef\@uline@linegap{.8\p@}%
+   \def\@uline@dashlength{3\p@}%
+   \def\@uline@dashgap{\p@}%
+   \let\@uline@thickness\@uline@default@thickness
+   \let\@uline@colorstart\@empty
+   \let\@uline@colorend\@empty
+   \protected@edef\@tempa{#2\space}%
+   \protected@edef\@tempa{\expandafter\zap@space\@tempa\@empty}%
+   \ifx\@tempa\@empty
+      \let\@tempa\@uline@default@options
+   \else
+      \toks@\expandafter{\@tempa}%
+      \edef\@tempa{%
+         \@uline@default@options
+         \ifx\@uline@default@options\@empty\else ,\fi
+         \the\toks@}%
+   \fi
+   \@for\@tempa:=\@tempa\do{\expandafter\@uline@set@option@\@tempa==\@nil}%
+   \@tempdima\@uline@linepos\relax
+   \@tempdimb\@uline@thickness\relax
+   \dimen@\@tempdimb
+   \advance\dimen@\@uline@linegap\relax
+   \count@\@uline@lines\relax \advance\count@\m@ne
+   \if b#1\relax
+      \def\@tempsigna{-}%
+      \def\@tempsignb{}%
+   \else
+      \def\@tempsigna{}%
+      \def\@tempsignb{-}%
+      \if c#1\relax
+         \multiply\@tempdima\tw@
+         \advance\@tempdima-\count@\dimen@
+         \divide\@tempdima\tw@
+      \fi
+   \fi
+   \advance\@tempdima.5\@tempdimb
+   \advance\@tempdimb-\@tempdima
+   \csname @uline@make@\@uline@leader@type\endcsname{#1}%
+   \expandafter\ifx
+      \csname @uline@linespec@\@uline@layer @patterns\endcsname
+      \@empty
+   \else
+      \def\@uline@linespec@type{patterns}%
+   \fi
+   \edef\@uline@this@linespec{%
+      \expandafter\noexpand
+      \csname
+         @uline@linespec%
+         @\@uline@layer
+         @\@uline@linespec@type
+      \endcsname}%
+   \toks@\expandafter\expandafter\expandafter{\@uline@this@linespec}%
+   \expandafter\edef\@uline@this@linespec{%
+      \the\toks@
+      \@uline@colorstart \@tempa \@uline@colorend}%
+   \edef\@uline@this@gluespec{%
+      \expandafter\noexpand
+      \csname
+         @uline@gluespec%
+         @\@uline@layer
+      \endcsname}%
+   \toks@\expandafter\expandafter\expandafter{\@uline@this@gluespec}%
+   \if@uline@altglue
+      \expandafter\edef\@uline@this@gluespec{%
+         \the\toks@
+         \expandafter\ifx\@uline@this@gluespec\@empty\else
+            \kern-\@uline@altglue@unit
+         \fi
+         \@uline@colorstart \@tempb \@uline@colorend}%
+   \else
+      \edef\@tempa{%
+         \expandafter\ifx\@uline@this@gluespec\@empty\else \nobreak\fi}%
+      \expandafter\edef\@uline@this@gluespec{%
+         \the\toks@
+         \expandafter\ifx\@uline@this@gluespec\@empty\else
+            \@tempa \hskip-\@uline@tempskip
+         \fi
+         \@uline@colorstart
+         \@tempa \@tempb
+         \@uline@colorend}%
+   \fi}
+\def\@uline@set@option@#1=#2=#3\@nil{%
+   \def\@tempa{#1}%
+   \ifx\@tempa\@empty\else
+      \@ifundefined{@uline@opt@#1}%
+         {\def\@uline@linepos{#1}}%
+         {\@nameuse{@uline@opt@#1}{#2}}%
+   \fi}
+\def\@uline@opt@type#1{%
+   \if@uline@altglue
+      \PackageWarning{uline--}{Only solid lines are available
+         under \string\UseAltLeaders\MessageBreak
+         or package option ``altleaders''. \space Option for\MessageBreak
+         leader type is ignored}%
+   \else
+      \def\@uline@leader@type{#1}%
+   \fi}
+\def\@uline@opt@position#1{\def\@uline@linepos{#1}}
+\def\@uline@opt@lines#1{\def\@uline@lines{#1}}
+\def\@uline@opt@width#1{\def\@uline@thickness{#1}}
+\def\@uline@opt@linegap#1{\def\@uline@linegap{#1}}
+\def\@uline@opt@dashlength#1{\def\@uline@dashlength{#1}}
+\def\@uline@opt@dashgap#1{\def\@uline@dashgap{#1}}
+\def\@uline@opt@foreground{\@uline@set@layer{foreground}{background}}
+\def\@uline@opt@background{\@uline@set@layer{background}{foreground}}
+\def\@uline@set@layer#1#2#3{%
+   \lowercase{\def\@tempa{#3}}%
+   \ifx\@tempa\@empty
+      \def\@tempa{true}%
+   \else
+     \expandafter\ifx\csname @tempswa\@tempa\endcsname\relax
+         \def\@tempa{true}%
+     \fi
+   \fi
+   \csname @tempswa\@tempa\endcsname
+   \edef\@uline@layer{\if@tempswa #1\else #2\fi}}
+\def\@uline@opt@color#1{%
+   \@uline@parse@color#1[]\@nil
+   \ifx\@uline@color@model\@empty
+      \ifx\@uline@color@value\@empty\else
+         \edef\@uline@colorstart{%
+            \begingroup
+            \noexpand\noexpand\noexpand\color{\@uline@color@value}%
+            \noexpand\noexpand\noexpand\@uline@penalty@after@special}%
+         \def\@uline@colorend{\endgroup}%
+      \fi
+   \else
+      \edef\@uline@colorstart{%
+         \begingroup
+         \noexpand\noexpand\noexpand\color
+            [\@uline@color@model]{\@uline@color@value}}%
+      \def\@uline@colorend{\endgroup}%
+   \fi}
+\def\@uline@parse@color#1[#2]#3\@nil{%
+   \def\@tempa{#2}%
+   \ifx\@tempa\@empty
+      \let\@uline@color@model\@empty
+      \def\@uline@color@value{#1}%
+   \else
+      \def\@uline@color@model{#2}%
+      \edef\@uline@color@value{\@uline@parse@color@#3[\@nil}%
+   \fi}
+\def\@uline@parse@color@#1[#2\@nil{#1}
+\def\@uline@opt@color@without@colorpkg#1{%
+   \PackageWarning{uline--}{Package ``color'' is not loaded.\MessageBreak
+      Line color is ignored}%
+   \global\let\@uline@opt@color\@gobble}
+\AtBeginDocument{%
+   \@ifpackageloaded{color}\relax
+      {\global\let\@uline@opt@color\@uline@opt@color@without@colorpkg
+       \global\let\@uline@place@setcolor\@uline@place@setcolor@without@colorpkg}}
+\def\@uline@make@solidline#1{%
+   \def\@tempaz{%
+      \vrule \@width\@tempdima \@height\the\@tempdima \@depth\the\@tempdimb
+      \kern-\@tempdima}%
+   \edef\@tempa{\@tempaz}%
+   \if@uline@altglue
+      \def\@tempbz{%
+         \vrule \@height\the\@tempdima \@depth\the\@tempdimb
+                \@width\@uline@altglue@unit}%
+   \else
+      \def\@tempbz{%
+         \leaders \vrule \@height\the\@tempdima \@depth\the\@tempdimb
+                  \hskip\@uline@tempskip}%
+   \fi
+   \edef\@tempb{\@tempbz}%
+   \@whilenum\count@>\z@\do{%
+      \advance\count@\m@ne
+      \advance\@tempdima\@tempsigna\dimen@
+      \advance\@tempdimb\@tempsignb\dimen@
+      \edef\@tempa{\@tempa \@tempaz}%
+      \if@uline@altglue
+         \edef\@tempb{\@tempb \kern-\@uline@altglue@unit \@tempbz}%
+      \else
+         \edef\@tempb{%
+            \@tempb
+            \nobreak \hskip-\@uline@tempskip
+            \nobreak \@tempbz}%
+      \fi}}%
+\def\UlineMaxPatterns#1{%
+   \afterassignment\remove@to@nnil
+   \count@=0#1\relax\@nnil
+   \ifnum\count@<\@ne \count@\@ne \fi
+   \xdef\@uline@max@patterns{\the\count@}}
+\@onlypreamble\UlineMaxPatterns
+\def\@uline@max@patterns{5}
+\def\@uline@prepare@boxes#1{%
+   \count@=#1\relax
+   \@whilenum\@uline@max@patterns>\count@\do{%
+      \advance\count@\@ne
+      \expandafter\newbox\csname @uline@pattern@\romannumeral\count@\endcsname}}
+\@uline@prepare@boxes\z@
+\AtBeginDocument{\@uline@prepare@boxes{5}}
+\newcount\@uline@pattern@id \@uline@pattern@id=\z@
+\def\@uline@get@pattern@box{%
+   \ifnum\@uline@max@patterns>\@uline@pattern@id
+      \advance\@uline@pattern@id\@ne
+   \else
+      \PackageWarning{uline--}{%
+         Too many patterns are used simultaneously.\MessageBreak
+         Some patterns will be lost}%
+   \fi
+   \edef\@uline@pattern@box{%
+      \csname @uline@pattern@\romannumeral\@uline@pattern@id\endcsname}}
+\def\@uline@make@dashline#1{%
+   \@uline@get@pattern@box
+   \setbox\@uline@pattern@box\hbox{%
+      \kern-\@uline@overlap
+      \@tempdimc\@uline@overlap\relax \multiply\@tempdimc\tw@
+      \advance\@tempdimc\@uline@dashlength\relax
+      \dimen@ii\@tempdimc
+      \advance\dimen@ii\@uline@dashgap\relax
+      \divide\@tempdimc\tw@
+      \def\@tempz{%
+         \vrule \@width\@tempdimc \@height\@tempdima \@depth\@tempdimb
+         \kern\@uline@dashgap
+         \vrule \@width\@tempdimc \@height\@tempdima \@depth\@tempdimb}%
+      \@tempz
+      \@whilenum\count@>\z@\do{%
+         \advance\count@\m@ne
+         \advance\@tempdima\@tempsigna\dimen@
+         \advance\@tempdimb\@tempsignb\dimen@
+         \kern-\dimen@ii \@tempz}%
+      \kern-\@uline@overlap}%
+   \@uline@set@pattern}
+\font\@uline@uwavefont=lasy5
+\AtBeginDocument{%
+   \ifx\@uline@uwave@adjust\relax
+      \@ifpackageloaded{type1cm}%
+         {\global\let\@uline@uwave@adjust\@empty}%
+         {\gdef\@uline@uwave@adjust{\kern-.3\p@}}%
+   \fi}
+\def\@uline@make@wavyline#1{%
+   \@uline@get@pattern@box
+   \setbox\@uline@pattern@box\hbox{%
+      \setbox\z@\hbox{\@uline@uwavefont \tbaselineshift=\z@
+         \@uline@uwave@adjust\char"3A \@uline@uwave@adjust}%
+      \@tempdimb\ht\z@ \advance\@tempdimb\dp\z@
+      \advance\@tempdimb-.28\p@%%% original line thickness (see lasy5.mf and cmsy5.mf)
+      \dimen@ii\@tempdimb
+      \if b\@uline@line@alignment\relax\else
+         \dimen4=\@uline@thickness\relax
+         \advance\@tempdimb-.5\dimen4\relax
+         \if t\@uline@line@alignment\relax\else
+            \divide\@tempdimb\tw@
+         \fi
+         \advance\@tempdima\@tempdimb
+      \fi
+      \setbox\z@\vbox to\z@{%
+         \offinterlineskip
+         \copy\z@
+         \ht\z@.25\p@ \dp\z@\z@
+         \@tempdimb\@uline@thickness\relax
+         \ifdim\@tempdimb>.3\p@
+            \advance\@tempdimb-.28\p@
+            \dimen@\@tempdimb \divide\dimen@ 16384\relax%%% 16384sp = .25pt
+            \count@\dimen@
+            \advance\count@\@ne
+            \dimen@.25\p@ \advance\@tempdimb-\count@\dimen@
+            \@whilenum\count@>\@ne\do{\advance\count@\m@ne \copy\z@}%
+            \kern\@tempdimb \copy\z@
+         \fi
+         \vss}%
+      \advance\dimen@ii\@uline@thickness\relax
+      \ht\z@\z@ \dp\z@\dimen@ii
+      \raise\@tempdima\copy\z@
+      \@whilenum\count@>\z@\do{%
+         \advance\count@\m@ne
+         \advance\@tempdima\@tempsigna\dimen@
+         \kern-\wd\z@
+         \raise\@tempdima\copy\z@}}%
+   \@uline@set@pattern}
+\def\@uline@set@pattern{%
+   \def\@uline@linespec@type{patterns}%
+   \let\@uline@discretionary\@uline@ignored@discretionary
+   \let\@uline@hyphenate\relax
+   \edef\@tempa{%
+      \begingroup
+      \dimen@\@tempdima
+      \advance\dimen@\wd\@uline@pattern@box
+      \kern-.5\wd\@uline@pattern@box \nobreak
+      \leaders\copy\@uline@pattern@box\hskip\dimen@
+      \advance\dimen@-.5\wd\@uline@pattern@box
+      \kern-\dimen@
+      \endgroup}%
+   \edef\@tempb{%
+      \begingroup
+      \advance\@uline@tempskip\wd\@uline@pattern@box
+      \hskip-.5\wd\@uline@pattern@box
+      \leaders\copy\@uline@pattern@box\hskip\@uline@tempskip
+      \hskip-.5\wd\@uline@pattern@box
+      \endgroup}}
+\expandafter\ifx\csname kanjiskip\endcsname\relax
+   \def\@uline@KKglue{0pt plus.5pt minus.5pt}%
+   \def\@uline@AKglue{.25em plus.1em minus.1em}%
+\else
+   \def\@uline@KKglue{\kanjiskip}%
+   \def\@uline@AKglue{\xkanjiskip}%
+\fi
+\def\@uline@KKglueadjust{\z@ \@plus.5\p@ \@minus.5\p@}
+\def\@uline@AKglueadjust{\z@ \@plus\p@ \@minus\p@}
+%%% \let\@uline@KAglue\@uline@AKglue
+\def\@uline@reset@pattern{%
+   \@uline@pattern@id\z@
+   \let\@uline@item@command\@firstofone
+   \let\@uline@textcolor\@empty
+   \let\@uline@bgcolor\@empty
+   \let\@uline@linespec@foreground@rules\@empty
+   \let\@uline@linespec@foreground@patterns\@empty
+   \let\@uline@linespec@background@rules\@empty
+   \let\@uline@linespec@background@patterns\@empty
+   \let\@uline@gluespec@foreground\@empty
+   \let\@uline@gluespec@background\@empty
+   \let\@uline@extra@leader\@empty}
+\@uline@reset@pattern
+\def\@uline@item#1{%
+   \ifvmode \leavevmode \fi
+   \begingroup
+   \iftdir \setbox\z@\hbox{\@uline@sample@jchar}\fi
+   \ifx\@uline@textcolor\@empty
+      \setbox\z@\hbox{\@uline@item@command{#1}}%
+   \else
+      \setbox\z@\hbox{{\@uline@textcolor\hbox{\@uline@item@command{#1}}}}%
+   \fi
+   \@tempdima\@uline@overlap\relax
+   \@tempdimb\@tempdima
+   \multiply\@tempdima\tw@
+   \advance\@tempdima\wd\z@
+   \advance\@tempdimb\wd\z@
+   \hbox{%
+      \ifx\@uline@bgcolor\@empty\else
+         \begingroup
+         \@uline@bgcolor
+         \kern-\@uline@overlap
+         \vrule \@width\@tempdima
+                \@height\@uline@strutht \@depth\@uline@strutdp
+         \kern-\@tempdimb
+         \endgroup
+      \fi
+      \ifx\@uline@linespec@background@rules\@empty\else
+         \kern-\@uline@overlap
+         \@uline@linespec@background@rules
+         \kern\@uline@overlap
+      \fi
+   \ifx\@uline@linespec@background@patterns\@empty\else
+      \egroup
+      \kern-\@uline@overlap
+      \@uline@linespec@background@patterns
+      \kern\@uline@overlap
+      \hbox\bgroup
+   \fi
+      \box\z@
+      \ifx\@uline@linespec@foreground@rules\@empty\else
+         \kern-\@tempdimb \@uline@linespec@foreground@rules \kern\@tempdimb
+      \fi}%
+   \ifx\@uline@linespec@foreground@patterns\@empty\else
+      \kern-\@tempdimb
+      \@uline@linespec@foreground@patterns
+      \kern\@tempdimb
+      \null
+   \fi
+   \endgroup}
+\def\@uline@overlap{.1\p@}
+\newskip\@uline@tempskip
+\def\@uline@glue#1{%
+   \ifhmode
+      \@uline@lastpenalty\lastpenalty
+      \@uline@tempskip#1\relax
+      \ifx\@uline@bgcolor\@empty\else
+         \begingroup
+         \@uline@bgcolor
+         \leaders \vrule \@height\@uline@strutht \@depth\@uline@strutdp
+                  \hskip\@uline@tempskip
+         \nobreak \hskip-\@uline@tempskip \nobreak
+         \endgroup
+      \fi
+      \ifx\@uline@gluespec@background\@empty\else
+         \@uline@gluespec@background
+         \def\@uline@glue@temp{\nobreak \hskip-\@uline@tempskip \nobreak}%
+         \ifx\@uline@gluespec@foreground\@empty
+            \ifx\@uline@extra@leader\@empty
+               \let\@uline@glue@temp\relax
+            \fi
+         \fi
+         \@uline@glue@temp
+      \fi
+      \ifx\@uline@extra@leader\@empty\else
+         \begingroup
+         \ifx\@uline@textcolor\@empty\else \@uline@textcolor\nobreak \fi
+         \@uline@extra@leader\hskip\@uline@tempskip
+         \ifx\@uline@gluespec@foreground\@empty\else
+            \nobreak \hskip-\@uline@tempskip \nobreak
+         \fi
+         \endgroup
+      \fi
+      \@uline@gluespec@foreground
+   \fi}
+\def\@uline@altglue#1{%
+   \ifhmode
+      \ifx\@uline@extra@leader\@empty \@uline@altglueA{#1}%
+      \else                           \@uline@altglueB{#1}%
+      \fi
+   \fi}
+\def\@uline@altglueA#1{%
+   \leaders
+      \hbox{%
+         \@uline@altglue@highlight
+         \ifx\@uline@gluespec@background\@empty\else
+            \@uline@gluespec@background
+            \ifx\@uline@gluespec@foreground\@empty\else
+               \kern-\@uline@altglue@unit
+            \fi
+         \fi
+         \@uline@gluespec@foreground}%
+      \hskip#1\relax}
+\def\@uline@altglueB#1{%
+   \@uline@tempskip#1\relax
+   \def\@tempa{%
+      \leaders
+         \hbox{%
+            \@uline@altglue@highlight
+            \ifx\@uline@gluespec@background\@empty\else
+               \@uline@gluespec@background
+            \fi}%
+         \hskip\@uline@tempskip
+         \nobreak \hskip-\@uline@tempskip\nobreak}%
+   \ifx\@uline@gluespec@background\@empty
+      \ifx\@uline@bgcolor\@empty \let\@tempa\@empty \fi
+   \fi
+   \@tempa
+   \begingroup
+   \ifx\@uline@textcolor\@empty\else \@uline@textcolor\nobreak \fi
+   \@uline@extra@leader\hskip\@uline@tempskip
+   \endgroup
+   \ifx\@uline@gluespec@foreground\@empty\else
+      \nobreak \hskip-\@uline@tempskip\nobreak
+      \leaders\hbox{\@uline@gluespec@foreground}\hskip#1\relax
+   \fi}
+\def\@uline@altglue@highlight{%
+   \ifx\@uline@bgcolor\@empty\else
+      \begingroup
+      \@uline@bgcolor
+      \vrule \@width\@uline@altglue@unit
+             \@height\@uline@strutht \@depth\@uline@strutdp
+      \endgroup
+      \kern-\@uline@altglue@unit
+   \fi}
+\newcount\@uline@lastpenalty
+\def\@uline@penalty@after@special{%
+   \ifnum\@uline@lastpenalty>\z@ \penalty\@uline@lastpenalty \fi}
+\def\@uline@altglue@unit{.2\p@}
+\def\@uline@setcolor#1#2{%
+   \def\@tempa{*}%
+   \def\@tempb{#1}%
+   \ifx\@tempa\@tempb
+      \def\@uline@textcolor{\normalcolor}%
+   \else
+      \@uline@setcolor@\@uline@textcolor{#1}%
+   \fi
+   \@uline@setcolor@\@uline@bgcolor{#2}}
+\def\@uline@setcolor@#1#2{%
+   \def\@tempa{!}%
+   \def\@tempb{#2}%
+   \ifx\@tempa\@tempb
+      \let#1\@empty
+   \else
+      \@uline@parse@color#2[]\@nil
+      \ifx\@uline@color@model\@empty
+         \ifx\@uline@color@value\@empty\else
+            \edef#1{\noexpand\color{\@uline@color@value}}%
+         \fi
+      \else
+         \edef#1{\noexpand\color[\@uline@color@model]{\@uline@color@value}}%
+      \fi
+   \fi}
+\def\@uline@accents{\"\'\.\=\^\`\~\H\v\u\b\c\d\r\t\k}
+\def\@uline@special@letters{%
+   \AA\aa\AE\ae\DH\dh\DJ\dj\i\j\L\l\NG\ng\O\o\OE\oe\SS\ss\TH\th}
+\begingroup
+\def\x#1#2{{\noexpand#1\expandafter\noexpand\csname#2\endcsname}}
+\def\xx#1#2{%
+   {\noexpand#1\expandafter\noexpand\csname#2\endcsname}%
+   {\expandafter\noexpand\csname \expandafter\@gobble\string#1\space\endcsname
+    \expandafter\noexpand\csname#2\endcsname}}
+\edef\x{%
+   \def\noexpand\@uline@extra@commands{%
+      \x{\relax}{skip}%
+      \x{\begingroup}{skip}%
+      \x{\endgroup}{skip}%
+      \x{\discretionary}{discretionary}%
+      \x{\protect}{protect}%
+      \xx{\uline}{textcommandwithoption}%
+      \xx{\mline}{textcommandwithoption}%
+      \xx{\oline}{textcommandwithoption}%
+      \xx{\udash}{textcommandwithoption}%
+      \xx{\mdash}{textcommandwithoption}%
+      \xx{\odash}{textcommandwithoption}%
+      \xx{\uwave}{textcommandwithoption}%
+      \xx{\mwave}{textcommandwithoption}%
+      \xx{\owave}{textcommandwithoption}%
+      \x{\@uline@item}{skiponearg}%
+      \x{\@uline@glue}{skiponearg}%
+      \x{\@uline@leaders}{skiptwoargs}%
+      \x{\@uline@setcolor}{skiptwoargs}%
+      \x{\@uline@bou@init}{skiponearg}%
+      \x{\@uline@execit}{execit}%
+      \x{\nonletter}{skiponearg}%
+      \x{\penalty}{penalty}%
+      \x{\spacefactor}{@spacefactor}%
+      \x{\inhibitglue}{inhibitglue}%
+      \x{\ }{ctrlspace}%
+      \xx{\nobreakspace}{nobreakspace}%
+      \xx{\ulineposition}{skiponearg}%
+      \xx{\mlineposition}{skiponearg}%
+      \xx{\olineposition}{skiponearg}%
+      \xx{\udashposition}{skiponearg}%
+      \xx{\mdashposition}{skiponearg}%
+      \xx{\odashposition}{skiponearg}%
+      \xx{\uwaveposition}{skiponearg}%
+      \xx{\mwaveposition}{skiponearg}%
+      \xx{\owaveposition}{skiponearg}%
+      \xx{\ulinewidth}{skiponearg}%
+      \xx{\mlinewidth}{skiponearg}%
+      \xx{\olinewidth}{skiponearg}%
+      \xx{\udashwidth}{skiponearg}%
+      \xx{\mdashwidth}{skiponearg}%
+      \xx{\odashwidth}{skiponearg}%
+      \xx{\uwavewidth}{skiponearg}%
+      \xx{\mwavewidth}{skiponearg}%
+      \xx{\owavewidth}{skiponearg}%
+      \x{\textcommand}{pkgtextcommand}%
+      \x{\leavevmode}{skip}%
+      \x{\frenchspacing}{skipandeval}%
+      \x{\nonfrenchspacing}{skipandeval}%
+      \x{\@noligs}{skip}%
+      \x{\@vobeyspaces}{skip}%
+      \xx{\text}{useonearg}%
+      \x{\mbox}{useonearg}%
+      \x{\makebox}{makebox}%
+      \x{\hbox}{boxcmd}%
+      \x{\vbox}{boxcmd}%
+      \x{\vtop}{boxcmd}%
+      \x{\box}{boxcopy}%
+      \x{\copy}{boxcopy}%
+      \x{\usebox}{usebox}%
+      \x{\unhbox}{unhbox}%
+      \x{\unhcopy}{unhcopy}%
+      \x{\unvbox}{unvbox}%
+      \x{\unvcopy}{unvcopy}%
+      \x{\hrule}{hvrule}%
+      \x{\vrule}{hvrule}%
+      \x{\lineskip}{skipglue}%
+      \x{\lineskiplimit}{skipdimen}%
+      \x{\prevdepth}{skipdimen}%
+      \x{\baselineskip}{skipglue}%
+      \x{\nointerlineskip}{skip}%
+      \x{\offinterlineskip}{skip}%
+      \x{\phantom}{useonearg}%
+      \x{\hphantom}{useonearg}%
+      \x{\vphantom}{useonearg}%
+      \x{\label}{skiponearg}%
+      \x{\index}{skiponearg}%
+      \x{\glossary}{skiponearg}%
+      \x{\G@refundefinedtrue}{skip}%
+      \x{\nfss@text}{useonearg}%
+      \xx{\GenericWarning}{skiptwoargs}%
+      \xx{\ref}{useonearg}%
+      \xx{\pageref}{useonearg}%
+      \xx{\cite}{cite}%
+      \x{\footnote}{footnote}%
+      \x{\footnotemark}{useoption}%
+      \x{\footnotetext}{footnotetext}%
+      \x{\endnote}{endnote}%
+      \x{\endnotemark}{useoption}%
+      \x{\endnotetext}{endnotetext}%
+      \x{\marginpar}{marginpar}%
+      \xx{\ensuremath}{useonearg}%
+      \xx{\mathversion}{skiponearg}%
+      \x{\boldmath}{skip}%
+      \x{\unboldmath}{skip}%
+      \xx{\textrm}{textcommand}%
+      \xx{\textsf}{textcommand}%
+      \xx{\texttt}{textcommand}%
+      \xx{\textmd}{textcommand}%
+      \xx{\textbf}{textcommand}%
+      \xx{\textup}{textcommand}%
+      \xx{\textsl}{textcommand}%
+      \xx{\textit}{textcommand}%
+      \xx{\textsc}{textcommand}%
+      \xx{\emph}{textcommand}%
+      \xx{\fontencoding}{addshape}%
+      \xx{\fontfamily}{addshape}%
+      \xx{\fontseries}{addshape}%
+      \xx{\fontshape}{addshape}%
+\expandafter\ifx\csname pfmtname\endcsname\relax\else
+      \xx{\textgt}{textcommand}%
+      \xx{\textmc}{textcommand}%
+      \xx{\romanencoding}{addshape}%
+      \xx{\romanfamily}{addshape}%
+      \xx{\romanseries}{addshape}%
+      \xx{\romanshape}{addshape}%
+      \xx{\kanjiencoding}{addshape}%
+      \xx{\kanjifamily}{addshape}%
+      \xx{\kanjiseries}{addshape}%
+      \xx{\kanjishape}{addshape}%
+      \xx{\gtfamily}{fontchange}%
+      \xx{\mcfamily}{fontchange}%
+      \xx{\gt}{fontchange}%
+      \xx{\mc}{fontchange}%
+\fi
+      \xx{\selectfont}{fontchange}%
+      \xx{\rmfamily}{fontchange}%
+      \xx{\sffamily}{fontchange}%
+      \xx{\ttfamily}{fontchange}%
+      \xx{\bfseries}{fontchange}%
+      \xx{\mdseries}{fontchange}%
+      \xx{\slshape}{fontchange}%
+      \xx{\itshape}{fontchange}%
+      \xx{\scshape}{fontchange}%
+      \xx{\upshape}{fontchange}%
+      \xx{\em}{fontchange}%
+      \xx{\rm}{fontchange}%
+      \xx{\sf}{fontchange}%
+      \xx{\tt}{fontchange}%
+      \xx{\bf}{fontchange}%
+      \xx{\sl}{fontchange}%
+      \xx{\it}{fontchange}%
+      \xx{\sc}{fontchange}%
+      \x{\tiny}{fontchange}%
+      \x{\scriptsize}{fontchange}%
+      \x{\footnotesize}{fontchange}%
+      \x{\small}{fontchange}%
+      \x{\normalsize}{fontchange}%
+      \x{\large}{fontchange}%
+      \x{\Large}{fontchange}%
+      \x{\LARGE}{fontchange}%
+      \x{\huge}{fontchange}%
+      \x{\Huge}{fontchange}%
+      \x{\fontsize}{fontsize}%
+      \x{\linespread}{skiponearg}%
+      \x{\color}{color}%
+      \x{\textcolor}{pkgtextcolor}%
+      \x{\colorbox}{colorbox}%
+      \x{\fcolorbox}{fcolorbox}%
+      \x{\normalcolor}{normalcolor}%
+      \x{\highlight}{highlight}%
+      \x{\uppercase}{textcommand}%
+      \xx{\MakeUppercase}{textcommand}%
+      \x{\lowercase}{textcommand}%
+      \xx{\MakeLowercase}{textcommand}%
+      \x{\textcircled}{useonearg}%
+      \xx{\textsuperscript}{useonearg}%
+      \xx{\textsubscript}{useonearg}%
+      \x{\char}{primitivechar}%
+      \x{\symbol}{useonearg}%
+      \x{\Pifont}{skiponearg}%
+      \x{\Pisymbol}{usetwoargs}%
+      \x{\MARU}{useoneargasjchar}%
+      \x{\maru}{useoneargasjchar}%
+      \xx{\UTF}{useoneargasjchar}%
+      \xx{\CID}{useoneargasjchar}%
+      \x{\MO}{useoneargasjchar}%
+      \x{\TMO}{useoneargasjchar}%
+      \x{\PMO}{useoneargasjchar}%
+      \x{\ruby}{usetwoargswithoptionasjchar}%
+      \x{\kintou}{usetwoargswithoption}%
+      \x{\keytop}{useonearg}%
+      \x{\kenten}{bou}%
+      \x{\bou}{bou}%
+      \xx{\rensuji}{rensuji}%
+      \x{\leaders}{process@leaders}%
+      \x{\cleaders}{process@leaders}%
+      \x{\xleaders}{process@leaders}%
+      \x{\hrulefill}{expandit}%
+      \x{\dotfill}{expandit}%
+      \x{\Pifill}{expandit}%
+      \x{\hskip}{hskip}%
+      \x{\hfil}{primitive@hglue}%
+      \x{\hfill}{primitive@hglue}%
+      \x{\hfilneg}{primitive@hglue}%
+      \x{\hss}{primitive@hglue}%
+      \x{\vskip}{skipglue}%
+      \x{\vfil}{skip}%
+      \x{\vfill}{skip}%
+      \x{\vfilneg}{skip}%
+      \x{\vss}{skip}%
+      \x{\thinspace}{textspace}%
+      \x{\,}{textspace}%
+      \x{\medspace}{textspace}%
+      \x{\:}{textspace}%
+      \x{\thickspace}{textspace}%
+      \x{\;}{textspace}%
+      \x{\negthinspace}{textspace}%
+      \x{\!}{textspace}%
+      \x{\negmedspace}{textspace}%
+      \x{\negthickspace}{textspace}%
+      \xx{\tmspace}{tmspace}%
+      \x{\kern}{kern}%
+      \xx{\hspace}{hspace}%
+      \xx{\vspace}{skiponeargwithstar}%
+      \x{\rule}{rule}%
+      \x{\raisebox}{raisebox}%
+      \x{\\}{newline}%
+      \xx{\newline}{Newline}%
+      \x{\linebreak}{skipoption}%
+      \x{\nolinebreak}{skipoption}%
+      \xx{\xspace}{xspace}%
+      \x{\/}{letterlike}%
+      \x{\nocorr}{skip}%
+      \x{\addtocounter}{skiptwoargs}%
+      \x{\setcounter}{skiptwoargs}%
+      \x{\stepcounter}{skiponearg}%
+      \x{\refstepcounter}{skiponearg}%
+      \x{\setlength}{setlength}%
+      \x{\addtolength}{setlength}%
+      \x{\string}{expandit}%
+      \x{\special}{skiponearg}%
+      \x{\let}{macrodef}%
+      \x{\def}{macrodef}}%
+   \def\noexpand\@uline@extra@commands@url{%
+      \x{\url}{process@url}%
+      \x{\urlstyle}{urlstyle}%
+      \x{\UrlRight}{expandit}}%
+\expandafter\ifx\csname pfmtname\endcsname\relax\else
+   \def\noexpand\@uline@extra@commands@ajmacros{%
+      \x{\ajHashigoTaka}{jcharlike}%
+      \x{\ajTsuchiYoshi}{jcharlike}%
+      \x{\ajTatsuSaki}{jcharlike}%
+      \x{\ajMayuHama}{jcharlike}%
+      \x{\ajMaru}{useoneargasjchar}%
+      \x{\ajKuroMaru}{useoneargasjchar}%
+      \x{\ajKaku}{useoneargasjchar}%
+      \x{\ajKuroKaku}{useoneargasjchar}%
+      \x{\ajMaruKaku}{useoneargasjchar}%
+      \x{\ajKuroMaruKaku}{useoneargasjchar}%
+      \x{\ajKakko}{useoneargasjchar}%
+      \x{\ajRoman}{useoneargasjchar}%
+      \x{\ajroman}{useoneargasjchar}%
+      \x{\ajPeriod}{useoneargasjchar}%
+      \x{\ajKakkoalph}{useoneargasjchar}%
+      \x{\ajKakkoYobi}{useoneargasjchar}%
+      \x{\ajKakkoroman}{useoneargasjchar}%
+      \x{\ajKakkoRoman}{useoneargasjchar}%
+      \x{\ajKakkoAlph}{useoneargasjchar}%
+      \x{\ajKakkoHira}{useoneargasjchar}%
+      \x{\ajKakkoKata}{useoneargasjchar}%
+      \x{\ajKakkoKansuji}{useoneargasjchar}%
+      \x{\ajMaruKansuji}{useoneargasjchar}%
+      \x{\ajNijuMaru}{useoneargasjchar}%
+      \x{\ajRecycle}{useoneargasjchar}%
+      \x{\ajHasenKakuAlph}{useoneargasjchar}%
+      \x{\ajCross}{useoneargasjchar}%
+      \x{\ajSlanted}{useoneargasjchar}%
+      \x{\ajApostrophe}{useoneargasjchar}%
+      \x{\ajYear}{useoneargasjchar}%
+      \x{\ajSquareMark}{useoneargasjchar}%
+      \x{\ajHishi}{useoneargasjchar}%
+      \x{\ajMaruYobi}{useoneargasjchar}%
+      \x{\ajTsumekakko}{useoneargasjchar}%
+      \x{\ajTumekakko}{useoneargasjchar}%
+      \x{\ajNenrei}{useoneargasjchar}%
+      \x{\ajKosu}{useoneargasjchar}%
+      \x{\ajFrac}{useoneargasjchar}%
+      \x{\aj半角}{useoneargasjchar}%
+      \x{\ajLig}{useoneargasjchar}%
+      \x{\ajPICT}{useoneargasjchar}%
+      \x{\※}{useoneargasjchar}%
+      \x{\ajArrow}{useoneargasjchar}%
+      \x{\ajKunten}{useoneargasjchar}%
+      \x{\ajTsumesuji}{usetwoargsasjchar}%
+      \x{\ajTumesuji}{usetwoargsasjchar}%
+      \x{\ajQuote}{usetwoargsasjchar}%
+      \x{\ajnenrei}{usetwoargsasjchar}}%
+\fi
+   \def\noexpand\@uline@extra@commands@sfkanbun{%
+      \x{\fukutagyobox}{useonearg}%%%?
+      \x{\tagyobox}{useonearg}%%%?
+      \x{\kundoku}{SFkundoku}%
+      \x{\kutoten}{usetwoargs}%
+      \x{\ongofu}{usetwoargsasjchar}%
+      \x{\kungofu}{usetwoargsasjchar}%
+      \x{\FuriKanji}{usethreeargsasjchar}%
+      \x{\furikanji}{usethreeargsasjchar}%
+      \x{\FuriKanjikt}{usethreeargsasjchar}%
+      \x{\furikanjikt}{usethreeargsasjchar}}%
+   \def\noexpand\@uline@extra@commands@furikana{%
+      \x{\nakakintou}{usetwoargs}%
+      \x{\kana}{usetwoargswithoptionasjchar}%
+      \x{\Kana}{SFKana}%
+      \x{\KANA}{usefiveargsasjchar}%
+      \x{\KANAorig}{usefiveargsasjchar}%
+      \x{\KANAtop}{usefiveargsasjchar}%
+      \x{\KANAmatubi}{usefiveargsasjchar}%
+      \x{\KANAorigmatubi}{usefiveargsasjchar}}%
+   \def\noexpand\@uline@extra@commands@furiknkt{%
+      \x{\nakakintou}{usetwoargs}%
+      \x{\katatsukiK}{usetwoargs}%
+      \x{\katatsukiR}{usetwoargs}%
+      \x{\kanakt}{usetwoargswithoptionasjchar}%
+      \x{\Kanakt}{SFKana}%
+      \x{\KANA}{usefiveargsasjchar}%
+      \x{\KANAkt}{usefiveargsasjchar}%
+      \x{\KANAktorig}{usefiveargsasjchar}%
+      \x{\KANAkttop}{usefiveargsasjchar}%
+      \x{\KANAktS}{usefiveargsasjchar}%
+      \x{\KANAktSorig}{usefiveargsasjchar}%
+      \x{\KANAktStop}{usefiveargsasjchar}}%
+   \def\expandafter\noexpand\csname @uline@extra@commands@kunten2e\endcsname{%
+      \x{\sounyuu}{nosizeitem@withonearg}%
+      \x{\tinysounyuu}{nosizeitem@withonearg}%
+      \x{\hidarisounyuu}{nosizeitem@withonearg}%
+      \x{\hidaritinysounyuu}{nosizeitem@withonearg}%
+      \x{\kaou}{jcharlike}%
+      \x{\ryakuou}{jcharlike}%
+      \x{\odorii}{jcharlike}%
+      \x{\odorihuku}{jcharlike}%
+      \x{\miseketi}{useoneargasjchar}%
+      \x{\zityuuii}{useoneargasjchar}%
+      \x{\hyousyou}{useoneargasjchar}%
+      \x{\nagahako}{useoneargasjchar}%
+      \x{\uekakenagahako}{useoneargasjchar}%
+      \x{\sitakakenagahako}{useoneargasjchar}%
+      \x{\marusounyuu}{useoneargasjchar}%
+      \x{\tinymarusounyuu}{useoneargasjchar}%
+      \x{\MigiNakaFn}{usetwoargsasjchar}%
+      \x{\MigiNakaSc}{usetwoargsasjchar}%
+      \x{\MigiNakaSm}{usetwoargsasjchar}%
+      \x{\MigiNakaTn}{usetwoargsasjchar}%
+      \x{\MigiKataFn}{usetwoargsasjchar}%
+      \x{\MigiKataSc}{usetwoargsasjchar}%
+      \x{\MigiKataSm}{usetwoargsasjchar}%
+      \x{\MigiKataTn}{usetwoargsasjchar}%
+      \x{\MigiKinton}{usetwoargsasjchar}%
+      \x{\MigiKintoSc}{usetwoargsasjchar}%
+      \x{\MigiKintoSm}{usetwoargsasjchar}%
+      \x{\MigiKintoTn}{usetwoargsasjchar}%
+      \x{\HidariNakaFn}{usetwoargsasjchar}%
+      \x{\HidariNakaSc}{usetwoargsasjchar}%
+      \x{\HidariNakaSm}{usetwoargsasjchar}%
+      \x{\HidariNakaTn}{usetwoargsasjchar}%
+      \x{\HidariKataFn}{usetwoargsasjchar}%
+      \x{\HidariKataSc}{usetwoargsasjchar}%
+      \x{\HidariKataSm}{usetwoargsasjchar}%
+      \x{\HidariKataTn}{usetwoargsasjchar}%
+      \x{\HidariKintoFn}{usetwoargsasjchar}%
+      \x{\HidariKintoSc}{usetwoargsasjchar}%
+      \x{\HidariKintoSm}{usetwoargsasjchar}%
+      \x{\HidariKintoTn}{usetwoargsasjchar}%
+      \x{\rubyii}{usetwoargsasjchar}%
+      \x{\hidarirubyii}{usetwoargsasjchar}%
+      \x{\ukun}{usetwoargsasjchar}%
+      \x{\sakun}{usetwoargsasjchar}%
+      \x{\kanjiukun}{usetwoargsasjchar}%
+      \x{\kanjisakun}{usetwoargsasjchar}%
+      \x{\kintoruby}{usetwoargsasjchar}%
+      \x{\hidarikintoruby}{usetwoargsasjchar}%
+      \x{\kanjikintoruby}{usetwoargsasjchar}%
+      \x{\hidarikanjikintoruby}{usetwoargsasjchar}%
+      \x{\kanjiruby}{usetwoargsasjchar}%
+      \x{\rubyiii}{usetwoargsasjchar}%
+      \x{\sougyou}{usetwoargsasjchar}%
+      \x{\sougyoux}{usetwoargsasjchar}%
+      \x{\sougyouii}{usetwoargsasjchar}%
+      \x{\tunogaki}{usetwoargsasjchar}%
+      \x{\hukusougyou}{usetwoargsasjchar}%
+      \x{\miseketiii}{usetwoargsasjchar}%
+      \x{\zityuu}{usetwoargsasjchar}%
+      \x{\SayuuNakaFn}{usethreeargsasjchar}%
+      \x{\SayuuNakaSc}{usethreeargsasjchar}%
+      \x{\SayuuNakaSm}{usethreeargsasjchar}%
+      \x{\SayuuNakaTn}{usethreeargsasjchar}%
+      \x{\SayuuKataFn}{usethreeargsasjchar}%
+      \x{\SayuuKataSc}{usethreeargsasjchar}%
+      \x{\SayuuKataSm}{usethreeargsasjchar}%
+      \x{\SayuuKataTn}{usethreeargsasjchar}%
+      \x{\SayuuKintoFn}{usethreeargsasjchar}%
+      \x{\SayuuKintoSc}{usethreeargsasjchar}%
+      \x{\SayuuKintoSm}{usethreeargsasjchar}%
+      \x{\SayuuKintoTn}{usethreeargsasjchar}%
+      \x{\sangyouwari}{usethreeargsasjchar}%
+      \x{\yongyouwari}{usefourargsasjchar}%
+      \x{\gogyouwari}{usefiveargsasjchar}%
+      \x{\reten}{jcharpostfix}%
+      \x{\ititen}{jcharpostfix}%
+      \x{\niten}{jcharpostfix}%
+      \x{\santen}{jcharpostfix}%
+      \x{\zyouten}{jcharpostfix}%
+      \x{\tyuuten}{jcharpostfix}%
+      \x{\geten}{jcharpostfix}%
+      \x{\kouten}{jcharpostfix}%
+      \x{\otuten}{jcharpostfix}%
+      \x{\heiten}{jcharpostfix}%
+      \x{\kaeriten}{jcharpostfixwithonearg}%
+      \x{\retenkana}{jcharpostfixwithonearg}%
+      \x{\migikogaki}{jcharpostfixwithonearg}%
+      \x{\hidarikogaki}{jcharpostfixwithonearg}%
+      \x{\migikogakiii}{jcharpostfixwithonearg}%
+      \x{\kanagaki}{jcharpostfixwithonearg}%
+      \x{\kokana}{jcharpostfixwithtwoargs}}}
+\expandafter\endgroup\x
+\def\@uline@commands@to@protect{%
+   \\                 \[             \]               \a            \addtocounter
+   \addtolength       \asciibar      \boldmath        \bou          \BS
+   \color             \colorbox      \endnotetext     \fcolorbox    \fontsize
+   \footnotesize      \footnotetext  \frenchspacing   \glossary     \hphantom
+   \Huge              \huge          \index           \kenten       \keytop
+   \kintou            \label         \LARGE           \Large        \large
+   \leavevmode        \linebreak     \makebox         \marginpar    \MARU
+   \maru              \mathstrut     \mbox            \MO           \nolinebreak
+   \nonfrenchspacing  \normalsize    \phantom         \Pifont       \Pisymbol
+   \PMO               \raisebox      \refstepcounter  \ruby         \rule
+   \scriptsize        \setcounter    \setlength       \stepcounter  \small
+   \strut             \symbol        \TeX             \textcircled  \textcolor
+   \tiny              \TMO           \unboldmath      \vphantom}
+\def\@uline@commands@to@protect@url{\url \urlstyle}
+\expandafter\ifx\csname pfmtname\endcsname\relax
+   \let\@uline@commands@to@protect@ajmacros\@empty
+\else
+   \def\@uline@commands@to@protect@ajmacros{%
+      \※            \aj半角          \ajApostrophe     \ajArrow
+      \ajCross       \ajFrac          \ajHasenKakuAlph  \ajHashigoTaka
+      \ajHishi       \ajKakko         \ajKakkoalph      \ajKakkoAlph
+      \ajKakkoHira   \ajKakkoKansuji  \ajKakkoKata      \ajKakkoroman
+      \ajKakkoRoman  \ajKakkoYobi     \ajKaku           \ajKosu
+      \ajKunten      \ajKuroKaku      \ajKuroMaru       \ajKuroMaruKaku
+      \ajLig         \ajMaru          \ajMaruKaku       \ajMaruKansuji
+      \ajMaruYobi    \ajMayuHama      \ajNenrei         \ajnenrei
+      \ajNijuMaru    \ajPeriod        \ajPICT           \ajQuote
+      \ajRecycle     \ajroman         \ajRoman          \ajSlanted
+      \ajSquareMark  \ajTatsuSaki     \ajTsuchiYoshi    \ajTsumekakko
+      \ajTsumesuji   \ajTumekakko     \ajTumesuji       \ajYear}
+\fi
+\def\@uline@commands@to@protect@sfkanbun{%
+   \fukutagyobox  \FuriKanji  \FuriKanjikt  \furikanji  \furikanjikt
+   \ichireten     \kundoku    \kungofu      \kungofuni  \kungofuno
+   \kungofuge     \kutoten    \migishift    \ninojiten  \ongofu
+   \ongofuge      \ongofuni   \ongofuno     \reten      \tagyobox
+   \tudume        \uereten}
+\def\@uline@commands@to@protect@furikana{%
+   \KANA           \Kana    \kana        \KANAmatubi  \KANAorig
+   \KANAorigmatubi \KANAtop \nakakintou}
+\def\@uline@commands@to@protect@furiknkt{%
+   \KANA        \KANAkt       \Kanakt      \kanakt     \KANAktorig
+   \KANAktS     \KANAktSorig  \KANAktStop  \KANAkttop  \katatsukiK
+   \katatsukiR  \nakakintou}
+\@namedef{@uline@commands@to@protect@kunten2e}{%
+   \geten              \gogyouwari       \heiten          \hidarikanjikintoruby
+   \HidariKataFn       \HidariKataSc     \HidariKataSm    \HidariKataTn
+   \HidariKintoFn      \hidarikintoruby  \HidariKintoSc   \HidariKintoSm
+   \HidariKintoTn      \hidarikogaki     \HidariNakaFn    \HidariNakaSc
+   \HidariNakaSm       \HidariNakaTn     \hidarirubyii    \hidarisounyuu
+   \hidaritinysounyuu  \hukusougyou      \hyousyou        \ititen
+   \kaeriten           \kanagaki         \kanjikintoruby  \kanjiruby
+   \kanjisakun         \kanjiukun        \kaou            \kintoruby
+   \kokana             \kouten           \marusounyuu     \MigiKataFn
+   \MigiKataSc         \MigiKataSm       \MigiKataTn      \MigiKintoFn
+   \MigiKintoSc        \MigiKintoSm      \MigiKintoTn     \migikogaki
+   \migikogakiii       \MigiNakaFn       \MigiNakaSc      \MigiNakaSm
+   \MigiNakaTn         \miseketi         \miseketiii      \nagahako
+   \niten              \odorihuku        \odorii          \otuten
+   \reten              \retenkana        \rubyii          \rubyiii
+   \ryakuou            \sakun            \sangyouwari     \santen
+   \SayuuKataFn        \SayuuKataSc      \SayuuKataSm     \SayuuKataTn
+   \SayuuKintoFn       \SayuuKintoSc     \SayuuKintoSm    \SayuuKintoTn
+   \SayuuNakaFn        \SayuuNakaSc      \SayuuNakaSm     \SayuuNakaTn
+   \sitakakenagahako   \sougyou          \sougyouii       \sougyoux
+   \sounyuu            \tinymarusounyuu  \tinysounyuu     \tunogaki
+   \tyuuten            \uekakenagahako   \ukun            \yongyouwari
+   \zityuu             \zityuuii         \zyouten}
+\AtBeginDocument{%
+   \@for\@tempa:=ajmacros,furikana,furiknkt,kunten2e,sfkanbun,url\do{%
+      \@ifpackageloaded{\@tempa}%
+         {\global\expandafter\@csc@t
+              \expandafter\@uline@extra@commands
+              \expandafter\@uline@extra@commands
+              \csname @uline@extra@commands@\@tempa\endcsname
+          \global\expandafter\@csc@t
+              \expandafter\@uline@commands@to@protect
+              \expandafter\@uline@commands@to@protect
+              \csname @uline@commands@to@protect@\@tempa\endcsname}%
+         \relax
+      \global\expandafter\let
+         \csname @uline@extra@commands@\@tempa\endcsname\relax
+      \global\expandafter\let
+         \csname @uline@commands@to@protect@\@tempa\endcsname\relax}}
+\def\@uline@add@extra@cmds#1#2#3{%
+   \def\@tempx##1##2\@nil{\noexpand##1}%
+   \let\@tempy\@empty
+   \def\@tempz{#3}%
+   \@for\@tempa:=\@tempz\do{%
+      \ifx\@tempa\@empty\else
+         \@csc@t\@tempa\@firstofone\@tempa
+         \edef\@tempb{\expandafter\@tempx\@tempa\@empty\@nil}%
+         \ifx\@tempa\@tempb
+            \if\expandafter\noexpand\@tempb\relax
+               #2%
+               \@csc@t\@tempy\@tempy\@tempb
+            \fi
+         \fi
+      \fi}%
+   \@csc@t#1#1\@tempy}
+\def\AddTextCommandInUline{%
+   \@uline@add@extra@cmds
+      \@uline@extra@commands
+      {\edef\@tempb{%
+         {\expandafter\noexpand\@tempb\noexpand\textcommand}%
+         {\expandafter\noexpand\csname
+             \expandafter\expandafter\expandafter\@gobble
+             \expandafter\string\@tempb\space
+          \endcsname
+          \noexpand\textcommand}}}}
+\def\AddUrlLikeCommandInUline{\@uline@add@extra@cmds\@uline@urllike@cmds\relax}
+\def\@uline@unbreakable{―‥…}
+\def\@@uline{\futurelet\let@token\@@@uline}
+\def\@@@uline{%
+   \let\@tempa\@uline@checktoken
+   \ifx\let@token\@nnil
+      \@uline@add@item
+      \@uline@set@last@glue
+      \let\@tempa\@gobble
+   \else \ifx\let@token\@sptoken \let\@tempa\@uline@space
+   \else \ifx\let@token\bgroup   \let\@tempa\@uline@bgroup
+   \fi\fi\fi
+   \@tempa}
+\def\@uline@set@last@glue{%
+   \ifx\@uline@previtem\relax\else
+      \ifx\@uline@previtem\@empty\else
+         \if@uline@inhibitglue\else
+            \let\@tempa\@uline@previtem \@onelevel@sanitize\@tempa
+            \edef\@tempa{\count@=`\@tempa}\@tempa\relax
+            \ifnum\count@>\@cclv
+               \@uline@check@Rglue\@uline@previtem
+               \ifdim\dimen@>.05\p@
+                   \edef\@uline@last@glue{\noexpand\ulineafterspace{\the\dimen@}}%
+               \fi
+            \fi
+         \fi
+      \fi
+   \fi}
+\def\@uline@add@item{%
+   \let\@tempa\@empty
+   \let\@templist\@empty
+   \ifx\@uline@prevjchar\relax\else
+      \ifx\@uline@prevjchar\@empty
+         \ifx\@uline@prevword\@empty\else
+            \let\@tempa\@uline@prevword
+            \@uline@hyphenate
+         \fi
+      \else
+         \let\@tempa\@uline@prevjchar
+      \fi
+   \fi
+   \ifx\@tempa\@empty\else
+      \ifx\@templist\@empty
+         \@csc@t\@tempa\@uline@prev@saved@protect\@tempa
+         \expandafter\def\expandafter\@tempa\expandafter{%
+            \expandafter\@uline@item\expandafter{\@tempa}}%
+         \@uline@append@replacement@text\@uline@text\@tempa
+      \else
+         \edef\@tempa{%
+            \def\noexpand\@tempa{%
+               \noexpand\@uline@append@tokens\noexpand\@uline@text
+                  {\discretionary
+                   {\noexpand\@uline@item{\char\@uline@curr@hyphenchar}}{}{}}}}%
+         \def\@tempb{\@tfor\@tempb:=}%
+         \expandafter\@tempb\@templist\do{%
+            \@tempa
+            \expandafter\def\expandafter\@tempb\expandafter{%
+               \expandafter\@uline@item\expandafter{\@tempb}}%
+            \@uline@append@replacement@text\@uline@text\@tempb}%
+      \fi
+   \fi}
+\newif\if@suppress@hyphenation
+\let\@uline@hyphenate\relax
+\def\@uline@hyphenate@{%
+   \if@suppress@hyphenation\else
+      \ifx\@uline@prev@saved@protect\@empty
+         \ifnum\@uline@curr@hyphenchar<\z@\else
+            \ifnum\@uline@curr@hyphenchar<\@cclvi
+               \expandafter\@uline@exec@hyphenate\expandafter{\@tempa}%
+            \fi
+         \fi
+      \fi
+   \fi}
+\newbox\@uline@g@tempbox
+\def\@uline@exec@hyphenate#1{%
+   \begingroup
+   \@tempswatrue
+   \begingroup
+   \def\@tempa{\@tfor\@tempb:=}%
+   \expandafter\@tempa\@uline@accents\do{\expandafter\let\@tempb\@firstofone}%
+   \expandafter\@tempa\@uline@special@letters\do{\expandafter\def\@tempb{a}}%
+   \protected@edef\@tempb{#1}\@onelevel@sanitize\@tempb
+   \edef\@tempb{\def\noexpand\@tempb{\@tempb}}%
+   \expandafter\endgroup\@tempb
+   \def\@tempa{\@tfor\@tempa:=}%
+   \expandafter\@tempa\@tempb\do{%
+      \edef\@tempa{\count@=`\@tempa}\@tempa\relax
+      \@tfor\@tempa:=\ \\\-\{\}\do{%
+         \expandafter\ifnum\expandafter`\@tempa=\count@ \@tempswafalse \fi}%
+      \if@tempswa\else \@break@tfor \fi}%
+   \let\@tempa\@empty
+   \if@tempswa
+      \setbox\z@\vbox{\hsize\z@ \sloppy \hfuzz\maxdimen
+         \leftskip\z@skip \rightskip\z@skip \parfillskip\z@skip
+         \noindent\hskip\z@skip #1}%
+      \global\setbox\@uline@g@tempbox\hbox{}%
+      \setbox\z@\vbox{\unvbox\z@\@invert@lines}%
+      \setbox\z@\hbox{#1}%
+      \ifdim\wd\z@<\wd\@uline@g@tempbox
+         \setbox\z@\hbox{%
+            \unhbox\@uline@g@tempbox
+            \let\@templist\@empty
+            \def\@tempz{#1}%
+            \setbox\tw@\box\voidb@x
+            \@uline@find@breakpos
+            \expandafter}\expandafter\toks@\expandafter{\@templist}%
+         \edef\@tempa{\def\noexpand\@templist{\the\toks@}}%
+      \fi
+   \fi
+   \expandafter\endgroup\@tempa}
+\def\@invert@lines{%
+  \unskip \unpenalty
+  \setbox\z@\lastbox
+  \ifvoid\z@\else
+     \global\setbox\@uline@g@tempbox\hbox{%
+        \unhbox\@uline@g@tempbox\hbox{\unhbox\z@\unskip}}%
+     \expandafter\@invert@lines
+  \fi}
+\def\@uline@find@breakpos{%
+   \ifx\@tempz\@empty\else
+      \setbox\z@\lastbox
+      \ifvoid\z@
+         \expandafter\@uline@append@tokens\expandafter\@templist
+            \expandafter{\expandafter{\@tempz}}%
+      \else
+         \@uline@find@breakpos@
+         \setbox\tw@\box\z@
+         \expandafter\expandafter\expandafter\@uline@find@breakpos
+      \fi
+   \fi}
+\def\@uline@find@breakpos@{%
+   \ifvoid\tw@\else
+      \let\@tempa\@empty
+      \loop
+         \let\@tempx\@empty
+         \expandafter\@uline@find@breakpos@@\@tempz\@nil
+         \ifx\@tempz\@empty
+            \dimen@\maxdimen
+         \else
+            \setbox4\hbox{\@tempa\char\hyphenchar\font}%
+            \dimen@\wd4\relax
+         \fi
+      \ifdim\dimen@<\wd\tw@ \repeat
+      \expandafter\@uline@append@tokens\expandafter\@templist
+         \expandafter{\expandafter{\@tempa}}%
+   \fi}
+\def\@uline@find@breakpos@@#1{%
+   \def\@tempy{#1}%
+   \ifx\@tempy\@nnil
+      \let\@uline@find@breakpos@next\@gobble
+   \else
+      \def\@tempyy{\@tfor\@tempyy:=}%
+      \expandafter\@tempyy\@uline@accents\do{%
+         \ifx\@tempy\@tempyy
+            \let\@tempyy\relax
+            \@break@tfor
+         \fi}%
+      \ifx\@tempyy\relax
+         \def\@uline@find@breakpos@next{\@uline@find@breakpos@accent}%
+      \else
+         \def\@uline@find@breakpos@next{\@uline@find@breakpos@@@}%
+      \fi
+   \fi
+   \@uline@find@breakpos@next{#1}}
+\def\@uline@find@breakpos@accent#1{%
+   \expandafter\def\expandafter\@tempx\expandafter{\@tempx#1}%
+   \@uline@find@breakpos@@}
+\def\@uline@find@breakpos@@@#1#2\@nil{%
+   \ifx\@tempx\@empty
+      \def\@tempx{#1}%
+   \else
+      \expandafter\def\expandafter\@tempx\expandafter{\@tempx{#1}}%
+   \fi
+   \@uline@append@replacement@text\@tempa\@tempx
+   \def\@tempz{#2}}
+\newif\if@uline@noAKglue
+\def\@uline@add@glue{%
+   \ifx\@uline@prevjchar\relax\else
+      \@uline@noAKgluefalse
+      \ifx\@uline@previtem\relax%%% after blank space etc.
+         \let\@uline@previtem\@empty
+         \@uline@noAKgluetrue
+      \fi
+      \ifx\@uline@currchar\relax%%% before blank space etc.
+         \let\@uline@currchar\@empty
+         \@uline@noAKgluetrue
+      \fi
+      \let\@uline@temp\@empty
+      \ifx\@uline@previtem\@empty
+         \ifx\@uline@currchar\@empty\else%%% after math-formula etc.
+            \let\@tempa\@uline@currchar \@onelevel@sanitize\@tempa
+            \edef\@tempa{\@tempcnta`\@tempa}\@tempa\relax
+            \ifnum\@tempcnta>\@cclv
+               \@uline@check@Lglue\@uline@currchar
+               \@tempskipa\@uline@AKglue\relax
+               \@tempswatrue
+               \ifdim\dimen@<.05\p@
+                  \ifnum\inhibitxspcode\@tempcnta<\tw@ \@tempswafalse \fi
+                  \if@uline@noAKglue \@tempswafalse \fi
+               \else
+                  \if@uline@inhibitglue
+                     \ifnum\inhibitxspcode\@tempcnta<\tw@ \@tempswafalse \fi
+                     \if@uline@noAKglue \@tempswafalse \fi
+                  \else
+                     \@tempskipa\dimen@\relax
+                     \if@uline@noAKglue\else
+                        \advance\@tempskipa\@uline@AKglueadjust\relax
+                     \fi
+                  \fi
+               \fi
+               \if@tempswa
+                  \@tempcntb\prebreakpenalty\@tempcnta
+                  \@uline@interchar@penalty\@tempcntb
+                  \@uline@add@glue@\@tempskipa
+               \fi
+            \fi
+         \fi
+      \else
+         \let\@tempa\@uline@previtem \@onelevel@sanitize\@tempa
+         \edef\@tempa{\@tempcnta`\@tempa}\@tempa\relax
+         \ifx\@uline@currchar\@empty%%% before math-formula etc.
+            \ifnum\@tempcnta>\@cclv
+               \@uline@check@Rglue\@uline@previtem
+               \@tempskipa\@uline@AKglue\relax
+               \@tempswatrue
+               \ifdim\dimen@<.05\p@
+                  \ifodd\inhibitxspcode\@tempcnta\else \@tempswafalse \fi
+                  \if@uline@noAKglue \@tempswafalse \fi
+               \else
+                  \if@uline@inhibitglue
+                     \ifodd\inhibitxspcode\@tempcnta\else \@tempswafalse \fi
+                     \if@uline@noAKglue \@tempswafalse \fi
+                  \else
+                     \@tempskipa\dimen@\relax
+                     \if@uline@noAKglue\else
+                        \advance\@tempskipa\@uline@AKglueadjust\relax
+                     \fi
+                  \fi
+               \fi
+               \if@tempswa
+                  \@tempcntb\postbreakpenalty\@tempcnta
+                  \@uline@interchar@penalty\@tempcntb
+                  \@uline@add@glue@\@tempskipa
+               \fi
+            \fi
+         \else
+            \let\@tempa\@uline@currchar \@onelevel@sanitize\@tempa
+            \edef\@tempa{\@tempcntb`\@tempa}\@tempa\relax
+            \count@\postbreakpenalty\@tempcnta
+            \advance\count@\prebreakpenalty\@tempcntb
+            \ifnum\@tempcnta>\@cclv
+               \ifnum\@tempcntb>\@cclv%%% Kanji-Kanji
+                  \if@uline@inhibitglue\else
+                     \setbox\z@\hbox{\@uline@previtem}%
+                     \setbox\tw@\hbox{\@uline@currchar}%
+                     \setbox4\hbox{\@uline@previtem\@uline@currchar}%
+                     \dimen@\wd4\relax
+                     \advance\dimen@-\wd\z@ \advance\dimen@-\wd\tw@
+                  \fi
+                  \@tempswatrue
+                  \@expandtwoargs\in@\@uline@previtem\@uline@unbreakable
+                  \ifin@\else \@tempswafalse \fi
+                  \@expandtwoargs\in@\@uline@currchar\@uline@unbreakable
+                  \ifin@\else \@tempswafalse \fi
+                  \if@tempswa\else
+                     \@uline@interchar@penalty{\count@}%
+                     \if@uline@inhibitglue
+                        \@tempskipa\@uline@KKglue\relax
+                     \else
+                        \@tempskipa\@uline@KKglue\relax
+                        \advance\@tempskipa-\dimen@\relax
+                        \ifdim\@tempskipa<\z@ \@tempskipa-\@tempskipa \fi
+                        \ifdim\@tempskipa<.05\p@
+                           \@tempskipa\@uline@KKglue\relax
+                        \else
+                           \@tempskipa\@uline@KKglueadjust\relax
+                           \advance\@tempskipa\dimen@\relax
+                        \fi
+                     \fi
+                     \@uline@add@glue@\@tempskipa
+                  \fi
+               \else%%% Kanji-Alnum
+                  \@uline@check@Rglue\@uline@previtem
+                  \@tempskipa\@uline@AKglue\relax
+                  \@tempswafalse
+                  \if@uline@inhibitglue
+                     \ifodd\inhibitxspcode\@tempcnta
+                        \ifodd\xspcode\@tempcntb \@tempswatrue \fi
+                     \fi
+                  \else
+                     \ifdim\dimen@<.05\p@
+                        \ifodd\inhibitxspcode\@tempcnta
+                           \ifodd\xspcode\@tempcntb \@tempswatrue \fi
+                        \fi
+                     \else
+                        \@tempswatrue
+                        \@tempskipa\@uline@AKglueadjust\relax
+                        \advance\@tempskipa\dimen@\relax
+                     \fi
+                  \fi
+                  \if@tempswa
+                     \@uline@interchar@penalty{\count@}%
+                     \@uline@add@glue@\@tempskipa
+                  \fi
+               \fi
+            \else
+               \ifnum\@tempcntb>\@cclv%%% Alnum-Kanji
+                  \@uline@check@Lglue\@uline@currchar
+                  \@tempskipa\@uline@AKglue\relax
+                  \@tempswafalse
+                  \if@uline@inhibitglue
+                     \ifnum\inhibitxspcode\@tempcntb>\@ne
+                        \ifnum\xspcode\@tempcnta>\@ne \@tempswatrue \fi
+                     \fi
+                  \else
+                     \ifdim\dimen@<.05\p@
+                        \ifnum\inhibitxspcode\@tempcntb>\@ne
+                           \ifnum\xspcode\@tempcnta>\@ne \@tempswatrue \fi
+                        \fi
+                     \else
+                        \@tempswatrue
+                        \@tempskipa\@uline@AKglueadjust\relax
+                        \advance\@tempskipa\dimen@\relax
+                     \fi
+                  \fi
+                  \if@tempswa
+                     \@uline@interchar@penalty{\count@}%
+                     \@uline@add@glue@\@tempskipa
+                  \else
+                     \ifx\@uline@hyphen@stat\@uline@single@hyphen
+                        \@uline@interchar@penalty{\z@}%
+                     \fi
+                  \fi
+               \fi
+            \fi
+         \fi
+      \fi
+      \@uline@add@glue@finish
+   \fi}
+\def\@uline@check@Lglue#1{%
+   \setbox\z@\hbox{#1}%
+   \setbox\tw@\hbox{\null#1}%
+   \dimen@\wd\tw@ \advance\dimen@-\wd\z@}
+\def\@uline@check@Rglue#1{%
+   \setbox\z@\hbox{#1}%
+   \setbox\tw@\hbox{#1\null}%
+   \dimen@\wd\tw@ \advance\dimen@-\wd\z@}
+\def\@uline@single@hyphen{-}
+\def\@uline@add@glue@finish{%
+   \if@uline@group@head
+      \@uline@append@replacement@text\@uline@migrating@item\@uline@temp
+   \else
+      \@uline@append@replacement@text\@uline@text\@uline@temp
+   \fi}
+\def\@uline@add@glue@#1{%
+   \skip@=#1\relax
+   \edef\@tempz{\noexpand\@uline@glue{\the\skip@}}%
+   \@uline@append@replacement@text\@uline@temp\@tempz}
+\def\@uline@add@glue@@#1{%
+   \let\@uline@temp\@empty
+   \@uline@add@glue@{#1}%
+   \@uline@add@glue@finish}
+\def\@uline@interchar@penalty#1{%
+   \ifnum#1=\z@\else
+      \edef\@tempz{\penalty\number#1\space}%
+      \@uline@append@replacement@text\@uline@temp\@tempz
+   \fi}
+\newcount\@uline@charcode
+\def\@uline@checktoken#1{%
+   \def\@uline@next{\@@uline}%
+   \def\@tempa{#1}%
+   \let\@tempb\@tempa
+   \@onelevel@sanitize\@tempb
+   \edef\@tempc{\expandafter\@car\@tempb\@empty\@nil}%
+   \edef\@tempb{\expandafter\@cdr\@tempb\@empty\@nil}%
+   \ifx\@tempb\@empty
+      \edef\@tempc{\@uline@charcode=`\@tempc\relax}\@tempc
+      \ifnum\@uline@charcode<\@cclvi
+         \ifnum      `\$=\@uline@charcode
+            \def\@uline@next{\@uline@skip@math}%
+         \else
+            \ifx\@uline@prevword\@empty
+               \@uline@add@item
+               \expandafter\def\expandafter\@uline@prevword
+                  \expandafter{\@uline@saved@protect#1}%
+               \def\@uline@currchar{#1}%
+               \@uline@add@glue
+            \else
+               \@tempswafalse
+               \ifx\@uline@hyphen@stat\@uline@single@hyphen
+                  \ifnum`\-=\@uline@charcode\else \@tempswatrue \fi
+               \fi
+               \if@tempswa
+                  \@suppress@hyphenationtrue
+                  \@uline@add@item
+                  \@uline@add@hyphenpenalty
+                  \let\@uline@prevword\@empty
+               \fi
+               \expandafter\@uline@append@tokens\expandafter\@uline@prevword
+                  \expandafter{\@uline@saved@protect#1}%
+            \fi
+            \let\@uline@prevjchar\@empty
+            \def\@uline@previtem{#1}%
+            \ifnum`\-=\@uline@charcode
+               \def\@uline@hyphen@stat{-}%
+               %%% %%% pp.123--456 の en-dash の直後といった箇所での行分割を
+               %%% %%% 抑制するなら，次の行のように設定．
+               %%% \edef\@uline@hyphen@stat{\@uline@hyphen@stat -}%
+            \else
+               \let\@uline@hyphen@stat\@empty
+            \fi
+            \let\@uline@prev@saved@protect\@empty
+            \let\@uline@saved@protect\@empty
+            \count@=\sfcode`#1\relax
+            \ifnum\count@=\z@\else
+               \@tempcnta\@uline@spacefactor\relax
+               \edef\@uline@spacefactor{%
+                  \ifnum\@tempcnta<\@m
+                     \ifnum\count@>\@m 1000\else \the\count@ \fi
+                  \else
+                     \the\count@
+                  \fi}%
+            \fi
+            \@uline@group@headfalse
+         \fi
+      \else
+         \def\@tempa{%
+            \@uline@add@item
+            \def\@uline@currchar{#1}%
+            \@uline@add@glue}%
+         \ifx\@uline@prevword\@empty
+            \ifx\@uline@prevjchar\relax
+               \let\@tempa\@empty
+               \if@uline@check@first@glue
+                  \if@uline@inhibitglue\else
+                     \def\@tempa{%
+                        \setbox\z@\hbox{#1}%
+                        \setbox\tw@\hbox{\null#1}%
+                        \dimen@\wd\tw@ \advance\dimen@-\wd\z@
+                        \ifdim\dimen@>.05\p@
+                           \edef\@tempa{%
+                              \noexpand\@uline@append@tokens
+                              \noexpand\@uline@text
+                              {\noexpand\hspace{\the\dimen@}}}%
+                           \@tempa
+                        \fi}%
+                  \fi
+               \fi
+            \fi
+         \fi
+         \@tempa
+         \def\@uline@prevjchar{#1}%
+         \let\@uline@prevword\@empty
+         \let\@uline@previtem\@uline@prevjchar
+         \let\@uline@hyphen@stat\@empty
+         \let\@uline@prev@saved@protect\@uline@saved@protect
+         \let\@uline@saved@protect\@empty
+         \def\@uline@spacefactor{1000}%
+         \@uline@group@headfalse
+         \@suppress@hyphenationfalse
+      \fi
+      \@uline@check@first@gluefalse
+      \@uline@inhibitgluefalse
+   \else
+      \@uline@examine@cs
+   \fi
+   \@uline@next}
+\def\@uline@add@hyphenpenalty{%
+   \ifx\@uline@hyphen@stat\@uline@single@hyphen
+      \edef\@uline@add@hyphenpenalty@{%
+         \noexpand\@uline@append@tokens\noexpand\@uline@text
+            {\penalty\the\hyphenpenalty\space}}%
+      \@uline@add@hyphenpenalty@
+   \fi}%
+\def\@uline@examine@cs{%
+   \def\@tempb{\a}%
+   \ifx\@tempa\@tempb
+      \def\@uline@next{\@uline@tabacckludge}%
+   \else
+      \def\@tempb{\@tfor\@tempb:=}%
+      \expandafter\@tempb\@uline@accents\do{%
+         \ifx\@tempa\@tempb
+            \let\@tempb\relax
+            \@break@tfor
+         \fi}%
+      \ifx\@tempb\relax
+         \expandafter\def\expandafter\@uline@next\expandafter{%
+            \expandafter\@uline@accent\@tempa}%
+      \else
+         \def\@tempb{\@tfor\@tempb:=}%
+         \expandafter\@tempb\@uline@extra@commands\do{%
+            \@csc@t\@tempc\@secondoftwo\@tempb
+            \@csc@t\@tempb\@firstoftwo\@tempb
+            \ifx\@tempa\@tempb
+               \let\@tempb\relax
+               \@break@tfor
+            \fi}%
+         \ifx\@tempb\relax
+            \edef\@uline@next{%
+               \expandafter\noexpand
+                  \csname
+                      @uline@%
+                      \expandafter\expandafter\expandafter\@gobble
+                      \expandafter\string\@tempc
+                  \endcsname
+               \expandafter\noexpand\@tempa}%
+         \else
+            \expandafter\@uline@add@special@item\expandafter{\@tempa}%
+         \fi
+      \fi
+   \fi}
+\def\@uline@macrodef{\afterassignment\@@uline}
+\def\@uline@execit#1#2{#2\@@uline}%%% #1: \@uline@execit
+\def\@uline@add@special@item{\@uline@add@special@item@\@empty}
+\def\@uline@add@special@item@without@AKglue{\@uline@add@special@item@\relax}
+\def\@uline@add@special@item@#1#2{%
+   \ifx\@uline@prevword\@empty
+      \@uline@add@item
+      \expandafter\def\expandafter\@uline@prevword\expandafter{%
+         \@uline@saved@protect#2}%
+      \let\@uline@currchar#1%
+      \@uline@add@glue
+   \else
+      \ifx\@uline@hyphen@stat\@uline@single@hyphen
+         \@uline@add@item
+         \@uline@add@hyphenpenalty
+         \let\@uline@prevword\@empty
+      \fi
+      \expandafter\@uline@append@tokens\expandafter\@uline@prevword
+         \expandafter{\@uline@saved@protect#2}%
+   \fi
+   \let\@uline@prevjchar\@empty
+   \let\@uline@previtem#1%
+   \let\@uline@hyphen@stat\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \def\@uline@spacefactor{1000}%
+   \@uline@group@headfalse
+   \@uline@check@first@gluefalse
+   \@uline@inhibitgluefalse}
+\def\@uline@add@special@item@asjchar{%
+   \@uline@add@special@item@asjchar@\@uline@sample@jchar}
+\def\@uline@add@jcharpostfix{\@uline@add@special@item@asjchar@\relax}
+\def\@uline@add@special@item@asjchar@#1#2{%
+   \@uline@add@item
+   \let\@uline@currchar#1%
+   \@uline@add@glue
+   \expandafter\def\expandafter\@uline@prevjchar\expandafter{%
+      \@uline@saved@protect#2}%
+   \let\@uline@prevword\@empty
+   \let\@uline@previtem\@uline@sample@jchar
+   \let\@uline@hyphen@stat\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \def\@uline@spacefactor{1000}%
+   \@uline@group@headfalse
+   \@uline@check@first@gluefalse
+   \@uline@inhibitgluefalse
+   \@suppress@hyphenationfalse}
+\def\@uline@add@nonletter{%
+   \@uline@add@nonletter@
+      {\let\@uline@currchar\relax
+       \@uline@add@glue}%
+      {\@uline@check@Rglue{\@uline@previtem}%
+       \ifdim\dimen@>\z@ \let\@uline@previtem\relax \fi}}
+\def\@uline@add@nonletter@with@reset{%
+   \@uline@add@nonletter@
+      {\let\@uline@currchar\relax
+       \@uline@add@glue}%
+      {\let\@uline@previtem\relax}}
+\def\@uline@add@newline{%
+   \@uline@add@nonletter@
+      \relax
+      {\@suppress@hyphenationfalse
+       \let\@uline@previtem\relax}}
+\def\@uline@add@nonletter@#1#2#3{%
+   \@uline@add@item
+   \@uline@add@hyphenpenalty
+   #1%
+   \expandafter\@uline@append@tokens\expandafter\@uline@text\expandafter{%
+      \@uline@saved@protect#3}%
+   \ifx\@uline@prevjchar\relax\else \let\@uline@prevjchar\@empty \fi
+   \let\@uline@prevword\@empty
+   \let\@uline@hyphen@stat\@empty
+   #2%
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \def\@uline@spacefactor{1000}%
+   \@uline@group@headfalse
+   \@uline@check@first@gluefalse
+   \@uline@inhibitgluefalse}
+\def\@uline@skip@math#1${%%% #1: math formula
+   \@uline@add@special@item{$#1$}%
+   \@suppress@hyphenationfalse
+   \@@uline}
+\def\@uline@tabacckludge#1{\@uline@accent{\a#1}}
+\def\@uline@accent#1#2{%%% #1: accent-macro, #2: (maybe) a letter
+   \def\@tempa{#2}%
+   \def\@tempb{\@nnil}%
+   \ifx\@tempa\@tempb
+      \@uline@add@special@item{#1{}}%
+      \def\@tempa{\@@uline\@nnil}%
+   \else
+      \def\@tempb{\@tfor\@tempb:=}%
+      \expandafter\@tempb\@uline@accents\do{%
+         \ifx\@tempa\@tempb
+            \let\@tempb\relax
+            \@break@tfor
+         \fi}%
+      \ifx\@tempb\relax
+         \def\@tempa{\@uline@accent{#1#2}}%
+      \else
+         \let\@tempb\@tempa
+         \@onelevel@sanitize\@tempb
+         \edef\@tempc{\expandafter\@car\@tempb\@empty\@nil}%
+         \edef\@tempb{\expandafter\@cdr\@tempb\@empty\@nil}%
+         \ifx\@tempb\@empty
+            \edef\@tempc{\count@=`\@tempc\relax}\@tempc
+            \ifnum\count@<\@cclvi
+               \@uline@add@special@item{#1{#2}}%
+            \else
+               \@uline@add@item
+               \@uline@add@hyphenpenalty
+               \def\@uline@currchar{#2}%
+               \@uline@add@glue
+               \def\@uline@prevjchar{#1{#2}}%
+               \let\@uline@prevword\@empty
+               \def\@uline@previtem{#2}%
+               \let\@uline@hyphen@stat\@empty
+               \let\@uline@prev@saved@protect\@uline@saved@protect
+               \let\@uline@saved@protect\@empty
+               \def\@uline@spacefactor{1000}%
+               \@uline@group@headfalse
+               \@uline@check@first@gluefalse
+               \@uline@inhibitgluefalse
+            \fi
+         \else
+            \@uline@add@special@item{#1{#2}}%
+         \fi
+         \def\@tempa{\@@uline}%
+      \fi
+   \fi
+   \@tempa}
+\def\@uline@bou#1{%  #1: \bou etc.
+   \expandafter\def\expandafter\@uline@temp\expandafter{%
+      \expandafter\@uline@textcommand@noitaliccorr\expandafter{%
+         \expandafter\@uline@bou@init\expandafter{%
+            \@uline@saved@protect#1}}}%
+   \let\@uline@saved@protect\@empty
+   \@uline@temp}
+\def\@uline@bou@init#1#2{{\def\@uline@item@command{#1}#2}}
+\let\@uline@textcommand@extratokens\@empty
+\def\@uline@pkgtextcommand#1#2{\@uline@textcommand{#2}}% #1: \textcommand
+\def\@uline@textcommand#1{%
+   \def\@uline@textcommand@extratokens{%
+      \@uline@execit{%
+         \@uline@measure@glueparams{#1}%
+         \let\@uline@first@item@after@group= %%% Do NOT remove this space.
+            \@uline@first@item@after@curr@group
+         \let\@uline@outer@slant\@uline@curr@outer@slant}%
+      \nocorr}%
+   \@uline@textcommand@{#1}}
+\def\@uline@textcommand@#1#2{% #1: \textrm etc.
+   \@uline@text@command{#2}%%% set \check@icl and \check@icr
+   \def\@uline@extra@operation{\@uline@append@tokens\@uline@text{\nocorr}}%
+   \def\@tempa{\@uline@textcommand@@{#1}{#2}}%
+   \futurelet\let@token\@tempa}
+\def\@uline@textcommand@noitaliccorr#1#2{%
+   \let\check@icl\@empty
+   \let\check@icr\@empty
+   \let\@uline@extra@operation\@empty
+   \def\@tempa{\@uline@textcommand@@{#1}{#2}}%
+   \futurelet\let@token\@tempa}
+\def\@uline@textcommand@@#1#2{%
+   \ifx\check@icl\@empty\else \@uline@set@italiccorr@left{#1}{#2}\fi
+   \@uline@set@italiccorr@right
+   \ifx\@uline@hyphen@stat\@uline@single@hyphen \@suppress@hyphenationtrue \fi
+   \@uline@add@item
+   \@uline@add@hyphenpenalty
+   \let\@uline@hyphen@stat\@empty
+   \toks@\expandafter{\@uline@textcommand@extratokens#2}%
+   \let\@uline@textcommand@extratokens\@empty
+   \expandafter\def\expandafter\@tempa\expandafter{\@uline@saved@protect#1}%
+   \@temptokena\expandafter{\@tempa}%
+   \toks\tw@\expandafter{\@uline@extra@operation}%
+   \edef\@tempa{%
+      \noexpand\@uline@bgroup@{\the\toks@}{\the\toks\tw@}%
+      \noexpand\@uline@after@group{\the\@temptokena}}%
+   \@tempa}
+\def\@uline@set@italiccorr@left#1#2{%
+   \setbox\z@\hbox{\@uline@extra@fontcommands#1{%
+      \xdef\@uline@gtempa{\the\fontdimen1\font}}}%
+   \expandafter\def\expandafter\@tempa\expandafter{\@car#2\@empty\@nil}%
+   \ifdim\@uline@gtempa>\z@\else
+      \@tempswatrue
+      \def\@tempb{\@tfor\@tempb:=}%
+      \expandafter\@tempb\nocorrlist\do{\ifx\@tempa\@tempb \@tempswafalse \fi}%
+      \if@tempswa \@uline@append@italiccorr \fi
+   \fi}
+\def\@uline@set@italiccorr@right{%
+   \ifx\let@token\@nnil
+      \let\@uline@first@item@after@curr@group= %%% Do NOT remove this space.
+         \@uline@first@item@after@group
+      \let\@uline@curr@outer@slant\@uline@outer@slant
+   \else
+      \let\@uline@first@item@after@curr@group= %%% Do NOT remove this space.
+         \let@token
+      \let\@uline@curr@outer@slant\@uline@curr@fontdimeni
+   \fi
+   \ifx\check@icr\@empty\else
+      \ifdim\@uline@curr@outer@slant>\z@\else
+         \@tempswatrue
+         \def\@tempa{\@tfor\@tempa:=}%
+         \expandafter\@tempa\nocorrlist\do{%
+            \expandafter\let\expandafter\@tempb\expandafter=\@tempa\relax
+            \ifx\@tempb\@uline@first@item@after@curr@group \@tempswafalse \fi}%
+         \if@tempswa
+            \def\@tempa{\@uline@append@italiccorr}%
+            \@csc@t\@uline@extra@operation\@tempa\@uline@extra@operation
+         \fi
+      \fi
+   \fi}
+\def\@uline@append@italiccorr{%
+   \@uline@split@text
+   \ifx\@uline@last@item\relax
+      \let\@tempa\@empty
+   \else
+      \expandafter\@uline@check@last@item\@uline@last@item\@nil\/\@nil\@nnil
+      \ifx\@tempa\@empty \@uline@append@tokens\@uline@last@item{\/}\fi
+      \expandafter\def\expandafter\@tempa\expandafter{%
+         \expandafter\@uline@item\expandafter{\@uline@last@item}}%
+   \fi
+   \@csc@t\@uline@text\@uline@tempbody\@tempa
+   \@uline@append@replacement@text\@uline@text\@uline@temptail}
+\def\@uline@split@text{%
+   \let\@uline@tempbody\@empty
+   \let\@uline@last@item\relax
+   \let\@uline@temptail\@empty
+   \expandafter\@uline@split@text@\expandafter\@empty
+      \@uline@text\@uline@item{\@nil}\@nnil}
+\def\@uline@split@text@#1\@uline@item#2#3\@nnil{%
+   \def\@tempa{#2}%
+   \ifx\@tempa\@nnil
+      \expandafter\def\expandafter\@uline@temptail\expandafter{#1}%
+      \expandafter\@gobble
+   \else
+      \expandafter\def\expandafter\@tempa\expandafter{#1}%
+      \ifx\@uline@last@item\relax
+         \let\@uline@tempbody\@tempa
+      \else
+         \expandafter\def\expandafter\@tempb\expandafter{%
+            \expandafter\@uline@item\expandafter{\@uline@last@item}}%
+         \@uline@append@replacement@text\@uline@tempbody\@tempb
+         \@uline@append@replacement@text\@uline@tempbody\@tempa
+      \fi
+      \def\@uline@last@item{#2}%
+      \expandafter\@firstofone
+   \fi
+   {\@uline@split@text@\@empty#3\@nnil}}
+\def\@uline@check@last@item#1\/\@nil#2\@nnil{\def\@tempa{#2}}
+\def\@uline@checkopt#1{\@ifnextchar[{\@uline@checkopt@{#1}}{#1{}}}
+\def\@uline@checkopt@#1[#2]{#1{[{#2}]}}
+\def\@uline@textcommandwithoption#1{%%% #1: \uline etc.
+   \@uline@checkopt{\@uline@textcommandwithoption@#1}}
+\def\@uline@textcommandwithoption@#1#2{\@uline@textcommand@noitaliccorr{#1#2}}
+\def\@uline@protect#1{%%% #1: \protect
+   \def\@uline@saved@protect{\protect}%
+   \@@uline}
+\def\@uline@skip#1{%%% #1: \boldmath etc.
+   \@uline@add@nonletter{#1}%
+   \@@uline}
+\def\@uline@skipandeval#1{%%% #1: \frenchspacing/\nonfrenchspacing
+   \@uline@add@nonletter{#1}%
+   \@@uline\@uline@execit{#1}}
+\def\@uline@jcharlike#1{%%% #1: \ajHashigoTaka etc.
+   \@uline@add@special@item@asjchar{#1}%
+   \@@uline}
+\def\@uline@jcharpostfix#1{%%% #1: \reten (in kunten2e package) etc.
+   \@uline@add@jcharpostfix{#1}%
+   \@@uline}
+\def\@uline@skipdimen#1{%%% #1: \lineskiplimit etc.
+   \def\@tempa{#1}%
+   \let\@nnil\relax
+   \afterassignment\@uline@skipdimen@
+   \dimen@}
+\def\@uline@skipdimen@{%
+   \def\@nnil{\@nil}%
+   \edef\@tempa{\@tempa\the\dimen@\relax}%
+   \expandafter\@uline@add@newline\expandafter{\@tempa}%
+   \@@uline}
+\def\@uline@skipglue#1{%%% #1: \vskip etc.
+   \def\@tempa{#1}%
+   \let\@nnil\relax
+   \afterassignment\@uline@skipglue@
+   \skip@}
+\def\@uline@skipglue@{%
+   \def\@nnil{\@nil}%
+   \edef\@tempa{\@tempa\the\skip@\relax}%
+   \expandafter\@uline@add@newline\expandafter{\@tempa}%
+   \@@uline}
+\def\@uline@skiponearg#1#2{%%% #1: \mathversion etc.
+   \@uline@add@nonletter{#1{#2}}%
+   \@@uline}
+\def\@uline@skiponeargwithoption#1{%
+   \@uline@checkopt{\@uline@skiponeargwithoption@{#1}}}
+\def\@uline@skiponeargwithoption@#1#2#3{%
+   \@uline@add@nonletter{#1#2{#3}}%
+   \@@uline}
+\def\@uline@skiponeargwithstar#1{%%% #1: \vspace etc.
+   \@ifstar{\@uline@skiponearg{#1*}}{\@uline@skiponearg{#1}}}
+\def\@uline@boxcmd#1#2#{%%% #1: \hbox etc.
+   \@uline@boxcmd@{#1#2}}
+\def\@uline@boxcmd@#1#2{%
+   \@uline@add@special@item@without@AKglue{#1{#2}}%
+   \@@uline}
+\def\@uline@boxcopy#1{%%% #1: \box/\copy etc.
+   \let\@nnil\relax
+   \def\@tempa{#1}%
+   \afterassignment\@uline@boxcopy@
+   \count@=}
+\def\@uline@boxcopy@{%
+   \def\@nnil{\@nil}%
+   \ifnum10>\count@
+      \PackageWarning{uline--}{%
+         Contents in a scratch box register (\string\box0 etc.)\MessageBreak
+         may be broken}%
+   \fi
+   \edef\@tempa{{\@tempa\the\count@}}%
+   \expandafter\@uline@add@special@item@without@AKglue\@tempa
+   \@@uline}%
+\def\@uline@usebox#1#2{%%% #1: \usebox
+   \@uline@add@nonletter{\leavevmode}%
+   \def\@tempa{\copy}%
+   \count@=#2\relax
+   \@uline@boxcopy@}
+\def\@uline@unhbox#1{\@uline@unhbox@\unhbox\box\@empty}
+\def\@uline@unhcopy#1{\@uline@unhbox@\unhcopy\copy\@empty}
+\def\@uline@unvbox#1{\@uline@unhbox@\unvbox\box
+   {\@uline@incompatible@direction@warning\unvbox}}
+\def\@uline@unvcopy#1{\@uline@unhbox@\unvcopy\copy
+   {\@uline@incompatible@direction@warning\unvcopy}}
+\def\@uline@incompatible@direction@warning#1{%
+   \string#1 cannot be used in horizontal direction.\MessageBreak}
+\def\@uline@unhbox@#1#2#3{%
+   \PackageWarning{uline--}{``unbox'' operation is not supported.\MessageBreak
+      #3\string#1 is replaced with \string#2 here}%
+   \@@uline#2}
+\def\@uline@hvrule#1{%
+   \def\@uline@rule@cmd{#1}%
+   \let\@uline@rule@width\@empty
+   \let\@uline@rule@height\@empty
+   \let\@uline@rule@depth\@empty
+   \let\@nnil\relax
+   \def\@uline@read@rule@after@cmd{\@uline@putrule}%
+   \@uline@read@rule@spec}
+\def\@uline@read@rule@spec{%
+   \let\@uline@tempword\@empty
+   \@uline@read@rule@spec@getword}
+\def\@uline@read@rule@spec@getword{%
+   \futurelet\let@token\@uline@read@rule@spec@getword@}
+\def\@uline@read@rule@spec@getword@{%
+   \def\@tempa{\@uline@read@rule@spec@getword@@}%
+   \ifx     \let@token\@sptoken
+      \ifx\@uline@tempword\@empty
+         \def\@tempa{\@uline@read@rule@spec@space}%
+      \else
+         \def\@tempa{\@uline@read@rule@spec@check@keyword}%
+      \fi
+   \else\ifx\let@token\bgroup
+      \def\@tempa{\@uline@read@rule@spec@check@keyword}%
+   \fi\fi
+   \@tempa}
+\def\@uline@read@rule@spec@getword@@#1{%
+   \def\@tempa{#1}%
+   \let\@tempb\@tempa
+   \@onelevel@sanitize\@tempb
+   \edef\@tempc{\expandafter\@car\@tempb\@empty\@nil}%
+   \edef\@tempb{\expandafter\@cdr\@tempb\@empty\@nil}%
+   \def\@tempa{\@uline@read@rule@spec@check@keyword#1}%
+   \ifx\@tempb\@empty
+      \edef\@tempc{\@tempcnta=`\@tempc\relax}\@tempc
+      \@tempswafalse
+      \ifnum`A>\@tempcnta\else \ifnum`Z<\@tempcnta\else \@tempswatrue \fi\fi
+      \ifnum`a>\@tempcnta\else \ifnum`z<\@tempcnta\else \@tempswatrue \fi\fi
+      \if@tempswa
+         \expandafter\def\expandafter\@uline@tempword\expandafter{%
+            \@uline@tempword#1}%
+         \def\@tempa{\@uline@read@rule@spec@getword}%
+      \fi
+   \fi
+   \@tempa}
+\begingroup
+\def\:{\def\@uline@read@rule@spec@space}
+\expandafter\endgroup\: {\@uline@read@rule@spec@getword}
+\def\@uline@read@rule@spec@check@keyword{%
+   \let\@tempa\@uline@tempword
+   \@onelevel@sanitize\@tempa
+   \expandafter\lowercase\expandafter{%
+      \expandafter\def\expandafter\@tempa\expandafter{\@tempa}}%
+   \def\@tempb{\@uline@read@rule@after@cmd}%
+   \ifx\@tempa\@empty\else
+      \@uline@read@rule@spec@check@keyword@\@uline@keyword@width
+      \if@tempswa
+         \def\@tempb{\@uline@set@rule@spec\@uline@keyword@width}%
+      \else
+         \@uline@read@rule@spec@check@keyword@\@uline@keyword@height
+         \if@tempswa
+            \def\@tempb{\@uline@set@rule@spec\@uline@keyword@height}%
+         \else
+            \@uline@read@rule@spec@check@keyword@\@uline@keyword@depth
+            \if@tempswa
+               \def\@tempb{\@uline@set@rule@spec\@uline@keyword@depth}%
+            \fi
+         \fi
+      \fi
+   \fi
+   \@tempb}
+\def\@uline@read@rule@spec@check@keyword@#1{%
+   \def\@tempc{\def\@tempc####1}%
+   \expandafter\@tempc#1##2\@nil{\def\@tempc{##1}}%
+   \expandafter\expandafter\expandafter\@tempc\expandafter\@tempa#1\@nil
+   \ifx\@tempc\@empty\@tempswatrue \else \@tempswafalse \fi}
+\def\@uline@set@rule@spec#1{%
+   \let\@uline@set@rule@paramname#1%
+   \csname @uline@set@rule@spec@cut@#1\expandafter\endcsname
+      \@uline@tempword\@empty\@empty\@empty\@empty\@empty\@empty\@empty\@nil
+   \afterassignment\@uline@set@rule@spec@
+   \expandafter\dimen@\@uline@tempword}
+\def\@uline@set@rule@spec@{%
+   \expandafter\edef\csname @uline@rule@\@uline@set@rule@paramname\endcsname{%
+      \the\dimen@}%
+   \@uline@read@rule@spec}
+\def\@uline@set@rule@spec@cut@width#1#2#3#4#5#6\@nil{%
+   \edef\@uline@tempword{#6}}
+\def\@uline@set@rule@spec@cut@height#1#2#3#4#5#6#7\@nil{%
+   \edef\@uline@tempword{#7}}
+\def\@uline@set@rule@spec@cut@depth#1#2#3#4#5#6\@nil{%
+   \edef\@uline@tempword{#6}}
+\def\@uline@putrule{%
+   \def\@nnil{\@nil}%
+   \edef\@tempa{%
+      \expandafter\ifx\@uline@rule@cmd\hrule
+         \noexpand\@uline@add@newline
+      \else
+         \noexpand\@uline@add@special@item@without@AKglue
+      \fi
+      {\expandafter\ifx\@uline@rule@cmd\vrule
+         \noexpand\protect\noexpand\strut
+       \fi
+      \@uline@rule@cmd
+      \@uline@rule@spec}}%
+   \@tempa
+   \expandafter\@@uline\@uline@tempword}
+\def\@uline@rule@spec{%
+   \ifx\@uline@rule@width\@empty\else
+      \@width\space\@uline@rule@width\space
+   \fi
+   \ifx\@uline@rule@height\@empty\else
+      \@height\space\@uline@rule@height\space
+   \fi
+   \ifx\@uline@rule@depth\@empty\else
+      \@depth\space\@uline@rule@depth\space
+   \fi}
+\let\@uline@keyword@width\@width
+\@onelevel@sanitize\@uline@keyword@width
+\let\@uline@keyword@height\@height
+\@onelevel@sanitize\@uline@keyword@height
+\let\@uline@keyword@depth\@depth
+\@onelevel@sanitize\@uline@keyword@depth
+\def\@uline@useonearg#1#2{%%% #1: \mbox etc.
+   \@uline@add@special@item@without@AKglue{#1{#2}}%
+   \@@uline}
+\def\@uline@useoneargasjchar#1#2#{%%% #1: \MARU etc.
+   \@uline@useoneargasjchar@{#1#2}}
+\def\@uline@useoneargasjchar@#1#2{%
+   \@uline@add@special@item@asjchar{#1{#2}}%
+   \@@uline}
+\def\@uline@useoneargwithoption#1#2#{%
+   \@uline@useonearg{#1#2}}
+\def\@uline@jcharpostfixwithonearg#1#2{% #1: \kaeriten (in kunten2e package) etc.
+   \@uline@add@jcharpostfix{#1{#2}}%
+   \@@uline}
+\def\@uline@nosizeitem@withonearg#1#2{% #1: \sounyuu (in kunten2e package) etc.
+   \let\@uline@saved@protect\@empty
+   \@@uline\kern\z@\nonletter{\protect#1{#2}}\kern\z@}
+\def\@uline@rensuji#1#2#{% #1: \rensuji
+   \@uline@rensuji@{#1#2}}
+\def\@uline@rensuji@#1#2{%
+   \@uline@add@special@item{#1{#2}}%
+   \@@uline}
+\def\@uline@cite#1{% #1: \cite
+   \@ifnextchar[{\@uline@cite@#1}{\@uline@cite@@#1}}
+\def\@uline@cite@#1[#2]#3{%
+   \@uline@add@special@item{#1[#2]{#3}}%
+   \@@uline}
+\def\@uline@cite@@#1#2{%
+   \@uline@add@special@item{#1{#2}}%
+   \@@uline}
+\def\@uline@usetwoargs#1#2#3{%
+   \@uline@add@special@item@without@AKglue{#1{#2}{#3}}%
+   \@@uline}
+\def\@uline@usetwoargswithoption#1#2#{% #1: \kintou etc.
+   \@uline@usetwoargs{#1#2}}
+\def\@uline@usetwoargsasjchar#1{% #1: \ajTsumesuji etc.
+   \@ifstar{\@uline@usetwoargsasjchar@{#1*}}{\@uline@usetwoargsasjchar@{#1}}}
+\def\@uline@usetwoargswithoptionasjchar#1#2#{% #1: \ruby etc.
+   \@uline@usetwoargsasjchar@{#1#2}}
+\def\@uline@usetwoargsasjchar@#1#2#3{%
+   \@uline@add@special@item@asjchar{#1{#2}{#3}}%
+   \@@uline}
+\def\@uline@jcharpostfixwithtwoargs#1#2#3{% #1: \kokana (in kunten2e package)
+   \@uline@add@jcharpostfix{#1{#2}{#3}}%
+   \@@uline}
+\def\@uline@skiptwoargs#1#2#3{%%% #1: \GenericWarning etc.
+   \@uline@add@nonletter{#1{#2}{#3}}%
+   \@@uline}
+\def\@uline@usethreeargsasjchar#1{% #1: \furikanji (in sfkanbun package) etc.
+   \@ifstar{\@uline@usethreeargsasjchar@{#1*}}{\@uline@usethreeargsasjchar@{#1}}}
+\def\@uline@usethreeargsasjchar@#1#2#3#4{%
+   \@uline@add@special@item@asjchar{#1{#2}{#3}{#4}}%
+   \@@uline}
+\def\@uline@usefourargsasjchar#1#2#3#4#5{% #1: \yongyouwari (in kunten2e package)
+   \@uline@add@special@item@asjchar{#1{#2}{#3}{#4}{#5}}%
+   \@@uline}
+\def\@uline@usefiveargsasjchar#1{% #1: \KANA (in furikana/furiknkt package) etc.
+   \@ifstar{\@uline@usefiveargsasjchar@{#1*}}{\@uline@usefiveargsasjchar@{#1}}}
+\def\@uline@usefiveargsasjchar@#1#2#3#4#5#6{%
+   \@uline@add@special@item@asjchar{#1{#2}{#3}{#4}{#5}{#6}}%
+   \@@uline}
+\def\@uline@useoption#1{%%% #1: \footnotemark etc.
+   \@uline@checkopt{\@uline@useoption@{#1}}}
+\def\@uline@useoption@#1#2{%
+   \@uline@add@special@item{#1#2}%
+   \@@uline}
+\def\@uline@skipoption#1{%%% #1: \linebreak etc.
+   \@ifnextchar[{\@uline@skipoption@{#1}}{\@uline@skipoption@@{#1}}}
+\def\@uline@skipoption@#1[#2]{%
+   \@uline@add@nonletter@with@reset{#1[#2]}%
+   \@@uline}
+\def\@uline@skipoption@@#1{%
+   \@uline@add@nonletter{#1}%
+   \@@uline}
+\def\@uline@expandit#1{%
+   \let\@uline@saved@protect\@empty
+   \expandafter\@@uline#1}
+\def\@uline@normalcolor#1{\@uline@color@{}{*}}%%% #1: \normalcolor
+\def\@uline@color#1#2#{\@uline@color@{#2}}%%% #1: \color
+\def\@uline@color@#1#2{%%% #1: color model (may be empty), #2: color
+   \edef\@tempa{#2\space}%
+   \edef\@tempa{\expandafter\zap@space\@tempa\@empty}%
+   \edef\@tempa{%
+      \noexpand\@uline@add@nonletter{\noexpand\@uline@setcolor{#1\@tempa}{}}}%
+   \@tempa
+   \@@uline}
+\def\@uline@pkgtextcolor#1#2#{\@uline@pkgtextcolor@{#2}}%%% #1: \textcolor
+\def\@uline@pkgtextcolor@#1#2#3{%
+   \ifx\@uline@hyphen@stat\@uline@single@hyphen \@suppress@hyphenationtrue \fi
+   \@uline@add@item
+   \@uline@add@hyphenpenalty
+   \begingroup
+   \@uline@pkgtextcolor@init{#1}{#2}%
+   \@uline@place@setcolor{\@uline@colorarg}{}%%% initialize \@uline@text
+   \@uline@bgroup@@{#3}{}%%% \@uline@bgroup@@ puts \endgroup
+   \@uline@after@group{}}
+\def\@uline@pkgtextcolor@init#1#2{%
+   \ifx\@uline@prevjchar\relax\else \let\@uline@prevjchar\@empty \fi
+   \let\@uline@prevword\@empty
+   \let\@uline@hyphen@stat\@empty
+   \let\@uline@saved@protect\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@migrating@item\@empty
+   \@uline@group@headtrue
+   \edef\@tempa{#2\space}%
+   \edef\@uline@colorarg{#1\expandafter\zap@space\@tempa\@empty}}%
+\def\@uline@place@setcolor#1#2{%
+   \edef\@uline@text{\noexpand\@uline@setcolor{#1}{#2}}}
+\def\@uline@place@setcolor@without@colorpkg#1#2{%
+   \let\@uline@text\@empty}
+\def\@uline@highlight#1#2#{\@uline@highlight@{#2}}%%% #1: \highlight
+\def\@uline@highlight@#1#2#3{%
+   \ifx\@uline@hyphen@stat\@uline@single@hyphen \@suppress@hyphenationtrue \fi
+   \@uline@add@item
+   \@uline@add@hyphenpenalty
+   \begingroup
+   \@uline@pkgtextcolor@init{#1}{#2}%
+   \@uline@place@setcolor{}{\@uline@colorarg}%%% initialize \@uline@text
+   \@uline@bgroup@@{#3}{}%%% \@uline@bgroup@@ puts \endgroup
+   \@uline@after@group{}}
+\def\@uline@colorbox#1#2#{\@uline@colorbox@{#1#2}}%%% #1: \colorbox
+\def\@uline@colorbox@#1#2#3{%
+   \@uline@add@special@item@without@AKglue{#1{#2}{#3}}%
+   \@@uline}
+\def\@uline@fcolorbox#1#2#{\@uline@fcolorbox@{#1#2}}%%% #1: \fcolorbox
+\def\@uline@fcolorbox@#1#2#3#4{%
+   \@uline@add@special@item@without@AKglue{#1{#2}{#3}{#4}}%
+   \@@uline}
+\def\@uline@primitivechar#1{%
+   \let\@nnil\relax
+   \afterassignment\@uline@primitivechar@
+   \count@=}
+\def\@uline@primitivechar@{%
+   \def\@nnil{\@nil}%
+   \edef\@tempa{%
+      \noexpand\@uline@add@special@item@without@AKglue{\char\the\count@}}%
+   \@tempa
+   \@@uline}
+\def\@uline@hskip#1{%
+   \let\@nnil\relax
+   \afterassignment\@uline@hskip@
+   \skip@=}
+\def\@uline@hskip@{%
+   \edef\@uline@currspace{\the\skip@}%
+   \def\@nnil{\@nil}%
+   \@uline@space@}
+\def\@uline@hspace#1{\@ifstar{\@@uline\penalty\@M #1}\@uline@hspace@}
+\def\@uline@hspace@#1{%
+   \def\@uline@currspace{#1}%
+   \@uline@space@}
+\def\@uline@textspace#1{%
+   \@uline@add@special@item@without@AKglue{#1}%
+   \@@uline}
+\def\@uline@tmspace#1#2#3#4{%
+   \let\@uline@saved@protect\@empty
+   \@uline@add@special@item@without@AKglue{\kern#2#4\relax}%
+   \@@uline}
+\def\@uline@primitive@hglue#1{%%% #1: \hfil etc.
+   \expandafter\let\expandafter\@uline@currspace
+      \csname @uline@glue@amount@\expandafter\@gobbletwo\string#1\endcsname
+   \@uline@space@}
+\def\@uline@glue@amount@skip{}
+\def\@uline@glue@amount@fil{\z@ \@plus 1fil}
+\def\@uline@glue@amount@fill{\z@ \@plus 1fill}
+\def\@uline@glue@amount@filneg{\z@ \@minus 1fil}
+\def\@uline@glue@amount@ss{\z@ \@plus 1fil \@minus 1fil}
+\def\@uline@kern#1{%
+   \def\@tempa{#1}%
+   \let\@nnil\relax
+   \afterassignment\@uline@kern@
+   \dimen@=}
+\def\@uline@kern@{%
+   \def\@nnil{\@nil}%
+   \edef\@tempa{%
+      \noexpand\@uline@add@special@item@without@AKglue{\@tempa\the\dimen@}}%
+   \@tempa
+   \@@uline}
+\def\@uline@process@leaders#1#2{%%% #1: \leaders etc.
+   \let\@nnil\relax
+   \def\@uline@curr@leader@cmd{#1}%
+   \def\@uline@curr@leader@box{#2}%
+   \ifx     #2\hrule \def\@tempa{\@uline@leaders@getruleparams}%
+   \else\ifx#2\vrule \def\@tempa{\@uline@leaders@getruleparams}%
+   \else\ifx#2\copy  \def\@tempa{\@uline@leaders@getboxno}%
+   \else\ifx#2\box   \def\@tempa{\@uline@leaders@getboxno}%
+   \else             \def\@tempa{\@uline@leaders@getbox}%
+   \fi\fi\fi\fi
+   \@tempa}
+\def\@uline@leaders@getruleparams{%
+   \let\@uline@rule@width\@empty
+   \let\@uline@rule@height\@empty
+   \let\@uline@rule@depth\@empty
+   \def\@uline@read@rule@after@cmd{\@uline@leaders@getruleparams@}%
+   \@uline@read@rule@spec}
+\def\@uline@leaders@getruleparams@{%
+   \edef\@uline@curr@leader@box{%
+      \@uline@curr@leader@box
+      \@uline@rule@spec}%
+   \@uline@leaders@getglue}
+\def\@uline@leaders@getboxno{%
+   \afterassignment\@uline@leaders@getboxno@
+   \count@=}
+\def\@uline@leaders@getboxno@{%
+   \edef\@tempa{\the\count@}%
+   \@csc@t\@uline@curr@leader@box\@uline@curr@leader@box\@tempa
+   \@uline@leaders@getglue}
+\def\@uline@leaders@getbox#1#{%
+   \expandafter\def\expandafter\@uline@curr@leader@box\expandafter{%
+      \@uline@curr@leader@box#1}%
+   \@uline@leaders@getbox@}
+\def\@uline@leaders@getbox@#1{%
+   \expandafter\def\expandafter\@uline@curr@leader@box\expandafter{%
+      \@uline@curr@leader@box{#1}}%
+   \@uline@leaders@getglue}
+\def\@uline@leaders@getglue#1{%
+   \def\@tempa##1##2##3\@nil{##2}%
+   \edef\@uline@leaders@dir{%
+      \expandafter\@tempa\string#1\@empty\@empty\@empty\@nil}%
+   \ifx\@uline@leaders@dir\@empty \def\@uline@leaders@dir{@}\fi
+   \edef\@tempa{@uline@glue@amount@\expandafter\@gobbletwo\string#1}%
+   \expandafter\ifx\csname\@tempa\endcsname\relax
+      \let\@uline@leaders@glue\@empty
+   \else
+      \expandafter\let\expandafter\@uline@leaders@glue\csname\@tempa\endcsname
+   \fi
+   \ifx\@uline@leaders@glue\@empty \expandafter\@uline@leaders@getglue@
+   \else                           \expandafter\@uline@leaders@getglue@@@
+   \fi}
+\def\@uline@leaders@getglue@{%
+   \afterassignment\@uline@leaders@getglue@@
+   \skip@=}
+\def\@uline@leaders@getglue@@{%
+   \edef\@uline@leaders@glue{\the\skip@}%
+   \@uline@leaders@getglue@@@}
+\def\@uline@leaders@getglue@@@{%
+   \def\@nnil{\@nil}%
+   \toks@\expandafter{\@uline@curr@leader@box}%
+   \if h\@uline@leaders@dir\relax
+      \@uline@add@item
+      \@uline@add@hyphenpenalty
+      \let\@uline@hyphen@stat\@empty
+      \let\@uline@currchar\relax
+      \@uline@add@glue
+      \@uline@group@headfalse
+      \edef\@tempa{%
+         \noexpand\@uline@leaders
+            {\@uline@curr@leader@cmd \the\toks@}%
+            {\@uline@leaders@glue}}%
+      \@uline@append@replacement@text\@uline@text\@tempa
+      \let\@uline@prevjchar\@empty
+      \let\@uline@prevword\@empty
+      \let\@uline@previtem\relax
+      \let\@uline@prev@saved@protect\@empty
+      \let\@uline@saved@protect\@empty
+      \@uline@check@first@gluefalse
+      \@uline@inhibitgluefalse
+   \else
+      \edef\@tempa{%
+         \@uline@curr@leader@cmd \the\toks@
+         \vskip \@uline@leaders@glue\space}%
+      \expandafter\@uline@add@newline\expandafter{\@tempa}%
+   \fi
+   \@suppress@hyphenationfalse
+   \@@uline}
+\def\@uline@leaders#1#2{%
+   \def\@uline@extra@leader{#1}%
+   \@uline@glue{#2}%
+   \let\@uline@extra@leader\@empty}
+\def\@uline@rule#1{%
+   \@ifnextchar[\@uline@rule@{\@uline@rule@[]}}
+\def\@uline@rule@[#1]#2#3{%
+   \def\@tempa{#1}%
+   \ifx\@tempa\@empty \def\@tempa{\rule{#2}{#3}}%
+   \else              \def\@tempa{\rule[#1]{#2}{#3}}%
+   \fi
+   \expandafter\@uline@add@special@item@without@AKglue\expandafter{\@tempa}%
+   \@@uline}
+\def\@uline@makebox#1{%
+   \@ifnextchar(%
+      \@uline@makepicbox
+      {\@ifnextchar[\@uline@@makebox{\@uline@makebox@{}{}}}}
+\def\@uline@@makebox[#1]{\@uline@checkopt{\@uline@makebox@{[#1]}}}
+\def\@uline@makepicbox(#1){\@uline@checkopt{\@uline@makebox@{(#1)}}}
+\def\@uline@makebox@#1#2#3{%
+   \@uline@add@special@item@without@AKglue{\makebox#1#2{#3}}%
+   \@@uline}
+\def\@uline@raisebox#1#2#3#{\@uline@raisebox@#1{#2}{#3}}
+\def\@uline@raisebox@#1#2#3#4{%
+   \@uline@add@special@item@without@AKglue{#1{#2}#3{#4}}%
+   \@@uline}
+\def\@uline@Newline#1{%
+   \@uline@add@newline{#1}%
+   \@@uline}
+\def\@uline@newline#1{%
+   \@ifstar{\@uline@newline@{#1*}}%
+           {\@uline@newline@{#1}}}
+\def\@uline@newline@#1{%
+   \@ifnextchar[{\@uline@newline@@{#1}}{\@uline@newline@@@{#1}}}
+\def\@uline@newline@@#1[#2]{%
+   \@uline@add@newline{#1[#2]}%
+   \@ifnextchar[\@@uline\@@uline}
+\def\@uline@newline@@@#1{%
+   \@uline@add@newline{#1}%
+   \@@uline}
+\def\@uline@nobreakspace#1{\@@uline\penalty\@M\ }
+\def\@uline@ctrlspace#1{%
+   \begingroup
+   \def\@uline@spacefactor{\@m}%
+   \@uline@setspace
+   \expandafter\endgroup\expandafter
+   \def\expandafter\@uline@currspace\expandafter{\@uline@currspace}%
+   \@uline@space@}
+\def\@uline@xspace#1{\futurelet\@let@token\@uline@xspace@}
+\def\@uline@xspace@{%
+   \edef\@uline@temp{\@xspace}%
+   \let\@uline@saved@protect\@empty
+   \expandafter\@@uline\@uline@temp}
+\def\@uline@penalty#1{%
+   \let\@nnil\relax
+   \afterassignment\@uline@penalty@
+   \count@=}
+\def\@uline@penalty@{%
+   \def\@nnil{\@nil}%
+   \edef\@tempa{\noexpand\@uline@add@nonletter{\penalty\the\count@\space}}%
+   \@tempa
+   \@@uline}
+\def\@uline@@spacefactor#1{%
+   \let\@nnil\relax
+   \afterassignment\@uline@@spacefactor@
+   \count@=}
+\def\@uline@@spacefactor@{%
+   \ifnum\count@>\z@ \edef\@uline@spacefactor{\the\count@}\fi
+   \def\@nnil{\@nil}%
+   \@@uline}
+\def\@uline@inhibitglue#1{%
+   \@uline@inhibitgluetrue
+   \let\@uline@hyphen@stat\@empty
+   \@@uline}
+\def\@uline@letterlike#1{%
+   \ifx\@uline@prevword\@empty
+      \@uline@add@item
+      \expandafter\def\expandafter\@uline@prevword\expandafter{%
+         \@uline@saved@protect#1}%
+   \else
+      \expandafter\@uline@append@tokens\expandafter\@uline@prevword
+         \expandafter{\@uline@saved@protect#1}%
+   \fi
+   \let\@uline@prevjchar\@empty
+   \let\@uline@hyphen@stat\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \@uline@group@headfalse
+   \@uline@check@first@gluefalse
+   \@uline@inhibitgluefalse
+   \@@uline}
+\def\@uline@discretionary#1#2#3#4{% #1: \discretionary
+   \let\@tempa\@empty
+   \@uline@discretionary@{#2}%
+   \@uline@discretionary@{#3}%
+   \@uline@discretionary@{#4}%
+   \@suppress@hyphenationtrue
+   \expandafter\@uline@add@nonletter@with@reset
+      \expandafter{\expandafter\discretionary\@tempa}%
+   \@@uline}
+\def\@uline@ignored@discretionary#1#2#3#4{\@@uline}
+\def\@uline@discretionary@#1{%
+   \def\@tempb{#1}%
+   \ifx\@tempb\@empty
+      \@uline@append@tokens\@tempa{{}}%
+   \else
+      \@uline@discretionary@@#1\@uline@item\@nil{#1}%
+   \fi}
+\def\@uline@discretionary@@#1\@uline@item#2\@nil#3{%
+   \def\@uline@discretionary@temp{#2}%
+   \ifx\@uline@discretionary@temp\@empty
+      \@uline@append@tokens\@tempa{{\@uline@item{#3}}}%
+   \else
+      \@uline@append@tokens\@tempa{{#3}}%
+   \fi}
+\def\@uline@footnote#1{%%% #1: \footnote
+   \@uline@checkopt\@uline@footnote@}
+\def\@uline@footnote@#1#2{%
+   \@uline@add@special@item{\ulinefootnotemark#1}%
+   \@uline@add@nonletter{%
+      \begingroup
+      \@uline@reset@pattern
+      \protect\footnotetext#1{#2}%
+      \endgroup}%
+   \@@uline}
+\def\ulinefootnotemark{%
+   \@ifnextchar[%
+      \@xulinefootnotemark
+     {\stepcounter\@mpfn
+      \protected@xdef\@thefnmark{\thempfn}%
+      \@footnotemark}}
+\def\@xulinefootnotemark[#1]{%
+   \begingroup
+   \csname c@\@mpfn\endcsname #1\relax
+   \unrestored@protected@xdef\@thefnmark{\thempfn}%
+   \endgroup
+   \@footnotemark}
+\def\@uline@footnotetext#1{%
+   \@uline@checkopt\@uline@footnotetext@}
+\def\@uline@footnotetext@#1#2{%
+   \let\@uline@saved@protect\@empty
+   \@uline@add@nonletter{%
+      \begingroup
+      \@uline@reset@pattern
+      \protect\footnotetext#1{#2}%
+      \endgroup}%
+   \@@uline}
+\def\@uline@endnote#1{\@uline@checkopt\@uline@endnote@}%%% #1: \endnote
+\def\@uline@endnote@#1#2{%
+   \@uline@add@special@item{\endnotemark#1}%
+   \def\@uline@saved@protect{\protect}%
+   \@uline@endnotetext@{#1}{#2}}
+\def\@uline@endnotetext#1{%%% #1: \endnotetext
+   \@uline@checkopt\@uline@endnotetext@}
+\def\@uline@endnotetext@#1#2{%
+   \begingroup
+   \let\protect\@uline@endnote@protect
+   \edef\@tempa{\noexpand\endnotetext#1{#2}}%
+   \expandafter\endgroup
+   \expandafter\@uline@add@nonletter\expandafter{\@tempa}%
+   \@@uline}
+\def\@uline@endnote@protect#1{%
+   \if\noexpand#1\relax
+      \expandafter\@uline@endnote@protect@\string#1 \@nil
+   \else
+      \string#1%
+   \fi}
+\def\@uline@endnote@protect@#1 #2\@nil{#1 }
+\def\@uline@marginpar#1{\@uline@checkopt\@uline@marginpar@}%%% #1: \marginpar
+\def\@uline@marginpar@#1#2{%
+   \let\@uline@saved@protect\@empty
+   \@uline@add@nonletter{%
+      \begingroup
+      \@uline@reset@pattern
+      \protect\marginpar#1{#2}%
+      \endgroup}%
+   \@@uline}
+\def\@uline@SFkundoku#1{\@testopt\@uline@SFkundoku@{1}}
+\def\@uline@SFkundoku@[#1]#2#3#4#5{%
+   \@testopt{\@uline@SFkundoku@@{[#1]{#2}{#3}{#4}{#5}}}{}}
+\def\@uline@SFkundoku@@#1[#2]{%
+   \@ifnextchar<%
+      {\@uline@SFkundoku@@@{#1[{#2}]}}%
+      {\@uline@SFkundoku@@@{#1[{#2}]}<>}}
+\def\@uline@SFkundoku@@@#1<#2>{%
+   \@ifnextchar(%
+      {\@uline@SFkundoku@@@@{#1<{#2}>}}%
+      {\@uline@SFkundoku@@@@{#1<{#2}>}()}}
+\def\@uline@SFkundoku@@@@#1(#2){%
+   \@uline@add@special@item@asjchar{\kundoku#1(#2)}%
+   \@@uline}
+\def\@uline@SFKana#1#2#{\@uline@SFKana@{#1#2}}
+\def\@uline@SFKana@#1#2#3{%
+   \let\@uline@saved@protect\@empty
+   \def\@uline@tempz{#1}%
+   \def\@uline@tempa{#2}%
+   \def\@uline@tempb{#3}%
+   \@uline@SFKana@loop
+   \@@uline}
+\def\@uline@SFKana@loop{%
+   \@tempswatrue
+   \ifx\@uline@tempa\@empty \ifx\@uline@tempb\@empty
+      \@tempswafalse
+   \fi\fi
+   \if@tempswa
+      \expandafter\@uline@SFKana@loop@
+         \@uline@tempa,\@nil\@nnil\@uline@tempa\@uline@tempx
+      \expandafter\@uline@SFKana@loop@
+         \@uline@tempb,\@nil\@nnil\@uline@tempb\@uline@tempy
+      \@csc@t\@uline@tempx\@uline@tempz\@uline@tempx
+      \@csc@t\@uline@tempx\@uline@tempx\@uline@tempy
+      \expandafter\@uline@add@special@item@asjchar\expandafter{\@uline@tempx}%
+      \expandafter\@uline@SFKana@loop
+   \fi}
+\def\@uline@SFKana@loop@#1,#2\@nnil#3#4{%
+   \ifx#3\@empty
+      \def#4{{}}%
+   \else
+      \def#4{{#1}}%
+      \def\@tempc{#2}%
+      \ifx\@tempc\@nnil
+         \let#3\@empty
+      \else
+         \expandafter\def\expandafter#3\expandafter{%
+            \@uline@SFKana@loop@@#2,\@nil\@nnil}%
+      \fi
+   \fi}
+\def\@uline@SFKana@loop@@#1,\@nil#2\@nnil{#1}
+\newif\if@uline@in@urlarg
+\def\@uline@process@url#1#2{% #1: \url
+   \ifx\@uline@hyphen@stat\@uline@single@hyphen \@suppress@hyphenationtrue \fi
+   \@uline@add@item
+   \@uline@add@hyphenpenalty
+   \let\@uline@hyphen@stat\@empty
+   \@suppress@hyphenationfalse
+   \begingroup
+   \@uline@in@urlargtrue
+   \@uline@ignore@primestrue
+   \def\@uline@char@class{-1}%
+   \let\@uline@hyphenate\relax
+   \let\@uline@space\@uline@space@in@url
+   \let\@uline@checktoken\@uline@checktoken@in@url
+   \@uline@measure@glueparams{\UrlFont}%
+   \@uline@init@char@table@for@url
+   \def\@tempa\,##1\Url@retain{}%
+   \expandafter\edef\csname @uline@urlchar32\endcsname{%
+      \ifx\Url@nosp\@tempa\ \fi}%
+   \def\do{\@uline@uline@set@url@charclass{0}}\UrlOrds
+   \def\do{\@uline@uline@set@url@charclass{1}}\UrlBreaks
+   \def\do{\@uline@uline@set@url@charclass{2}}\UrlBigBreaks
+   \def\do{\@uline@uline@set@url@charclass{3}}\UrlNoBreaks
+   \def\do{\@uline@examine@url@chardef}\UrlSpecials
+   \def\do{\@uline@set@url@nolig}\verbatim@nolig@list
+   \ifx\@uline@prevjchar\relax\else \let\@uline@prevjchar\@empty \fi
+   \let\@uline@prevword\@empty
+   \let\@uline@saved@protect\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@migrating@item\@empty
+   \let\@uline@text\@empty
+   \@uline@group@headtrue
+   \expandafter\def\expandafter\@tempa\expandafter{\UrlLeft#2\UrlRight}%
+   \toks@\expandafter{\@tempa}%
+   \@temptokena\expandafter{\UrlFont
+      \nonletter{\protect\SetMathFontsForUrlInUline}}%
+   \edef\@tempa{{\the\@temptokena\the\toks@}}%
+   \expandafter\@uline@bgroup@@\@tempa{}%%% \@uline@bgroup@@ puts \endgroup
+   \@uline@after@group{}}
+\def\@uline@init@char@table@for@url{%
+   \let\@uline@extra@urlchars\@uline@extra@urlchars@
+   \@tfor\@tempa:=%
+      {\<\textless{$\noexpand\protect\noexpand\langle$}<}%
+      {\>\textgreater{$\noexpand\protect\noexpand\rangle$}>}%
+      {\_\textunderscore\textunderscore{\string_}}%
+      {\|\textbar\textbar{\string|}}%
+      {\{\textbraceleft\textbraceleft{\expandafter\@gobble\string\{}}%
+      {\}\textbraceright\textbraceright{\expandafter\@gobble\string\}}}%
+      {\\\textbackslash\textbackslash{\expandafter\@gobble\string\\}}%
+      {\~\textasciitilde\textasciitilde{\string~}}%
+      {\$\textdollar\textdollar{\string$}}%
+      {\^\textasciicircum\textasciicircum{\string^}}%
+      {\*\textasteriskcentered\textasteriskcentered*}%
+      \do{\expandafter\@uline@init@char@table@for@url@\@tempa}}
+\def\@uline@extra@urlchars@{\ \<\>\_\|\{\}\\\~\$\^\*}
+\def\@uline@init@char@table@for@url@#1#2#3#4{%
+   \count@=`#1\relax
+   \def\@uline@encoding@temp{OT1}%
+   \expandafter\edef\csname @uline@urlchar\the\count@\endcsname{%
+      \ifdim\@uline@curr@fontdimeniii=\z@
+         #4%
+      \else
+         \ifx\@uline@encoding@temp\@uline@curr@f@encoding \noexpand#3%
+         \else                                            \noexpand#2%
+         \fi
+      \fi}}
+\def\@uline@uline@set@url@charclass#1#2{%
+   \count@=`#2\relax
+   \@tempcnta=#1\relax
+   \@uline@uline@set@url@charclass@}
+\def\@uline@uline@set@url@charclass@{%
+   \expandafter\edef\csname @uline@urlCC\the\count@\endcsname{\the\@tempcnta}}
+\def\@uline@set@url@nolig#1{%
+   \count@=`#1\relax
+   \@tempcnta=\csname @uline@urlCC\the\count@\endcsname\relax
+   \advance\@tempcnta\sixt@@n
+   \@uline@uline@set@url@charclass@}
+\def\@uline@examine@url@chardef#1#2{%
+   \count@=`#1\relax
+   \def\@tempa{#2}%
+   \expandafter\ifx\csname @uline@default@in@url\string#1\endcsname\@tempa
+      \@tempcnta\csname @uline@defaultCC@in@url\string#1\endcsname\relax
+   \else
+      \@uline@append@tokens\@uline@extra@urlchars{#1}%
+      \expandafter\def\csname @uline@urlchar\the\count@\endcsname{%
+         \mbox{\protect\@uline@inner@url@init \protect\@uline@inner@url{#2}}}%
+      \@tempcnta\z@
+   \fi
+   \@uline@uline@set@url@charclass@}
+\def\@uline@inner@url@init{\let\UrlLeft\@empty \let\UrlRight\@empty}
+\def\@uline@inner@url{\url}
+\def\@uline@urlstyle#1#2{% #1: \urlstyle
+   \def\@tempa{#2}%
+   \def\@tempb{same}%
+   \ifx\@tempa\@tempb \@uline@urlstyle@same
+   \else              \urlstyle{#2}%
+   \fi
+   \@uline@add@nonletter{#1{#2}}%
+   \@@uline}
+\def\@uline@urlstyle@same{%
+   \ifdim\@uline@curr@fontdimeniii=\z@ \url@ttstyle
+   \else                               \url@rmstyle
+   \fi
+   \def\UrlFont{}}
+\def\SetMathFontsForUrlInUline{%
+   \setbox\z@\hbox{%
+      \expandafter\ifx\csname S@\f@size\endcsname\relax
+         \calculate@math@sizes
+      \fi
+      \csname S@\f@size\endcsname
+      \edef\@uline@tempa{\textfont\z@\the\font}%
+      %%% Following four lines might be omitted (see url.sty).
+      \fontsize\sf@size\z@ \selectfont
+      \edef\@uline@tempa{\@uline@tempa \scriptfont\z@\the\font}%
+      \fontsize\ssf@size\z@ \selectfont
+      \edef\@uline@tempa{\@uline@tempa \scriptscriptfont\z@\the\font}%
+      \expandafter}\@uline@tempa
+   \everymath{\fam\z@}}
+\begingroup
+\def\:{\def\@uline@space@in@url}
+\expandafter\endgroup\: {%
+   \expandafter\ifx\csname @uline@urlchar32\endcsname\@empty
+      \expandafter\@@uline
+   \else
+      \expandafter\@uline@space@in@url@
+   \fi}
+\def\@uline@space@in@url@{%
+   \begingroup
+   \def\@uline@spacefactor{\@m}%
+   \@uline@setspace
+   \expandafter\endgroup\expandafter
+   \def\expandafter\@uline@currspace\expandafter{\@uline@currspace}%
+   \edef\@tempa{%
+      \noexpand\@uline@add@nonletter{\penalty\number\Url@sppen\relax}}%
+   \@tempa
+   \let\@uline@hyphen@stat\@empty
+   \let\@uline@currchar\relax
+   \@uline@group@headfalse
+   \@uline@add@glue@@\@uline@currspace
+   \let\@uline@prevjchar\@empty
+   \let\@uline@prevword\@empty
+   \let\@uline@previtem\relax
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \@uline@check@first@gluefalse
+   \@uline@inhibitgluefalse
+   \@@uline}
+\def\@uline@checktoken@in@url#1{%
+   \def\@uline@next{\@@uline}%
+   \def\@tempa{#1}%
+   \let\@tempb\@tempa
+   \@onelevel@sanitize\@tempb
+   \edef\@tempc{\expandafter\@car\@tempb\@empty\@nil}%
+   \edef\@tempb{\expandafter\@cdr\@tempb\@empty\@nil}%
+   \ifx\@tempb\@empty
+      \edef\@tempc{\@uline@charcode=`\@tempc\relax}\@tempc
+      \ifnum\@uline@charcode<\@cclvi
+         \ifcat\noexpand#1^\relax
+            \def\@uline@next{%
+               \@uline@get@scripts\@uline@set@scripts@in@url^}%
+         \else
+            \ifcat\noexpand#1_\relax
+               \def\@uline@next{%
+                  \@uline@get@scripts\@uline@set@scripts@in@url_}%
+            \else
+               \ifx#1~\relax
+                  \def\@tempa##1\~##2\@nil{\def\@tempa{##2}}%
+                  \expandafter\@tempa\UrlSpecials\~\@nil
+                  \ifx\@tempa\@empty
+                     \def\@uline@next{\@uline@add@nonbreak@space@in@url}%
+                  \else
+                     \@uline@process@normal@char@in@url{#1}%
+                  \fi
+               \else
+                  \@uline@process@normal@char@in@url{#1}%
+               \fi
+            \fi
+         \fi
+      \else
+         \def\@tempa{%
+            \@uline@add@item
+            \def\@uline@currchar{#1}}%
+         \ifx\@uline@prevword\@empty
+            \ifx\@uline@prevjchar\relax \let\@tempa\@empty \fi
+         \fi
+         \@tempa
+         \@uline@add@penalty@in@url
+         \def\@uline@prevjchar{#1}%
+         \let\@uline@prevword\@empty
+         \let\@uline@previtem\@uline@prevjchar
+         \let\@uline@hyphen@stat\@empty
+         \let\@uline@prev@saved@protect\@uline@saved@protect
+         \let\@uline@saved@protect\@empty
+         \def\@uline@spacefactor{1000}%
+         \def\@uline@char@class{0}%
+      \fi
+      \@uline@group@headfalse
+      \@uline@check@first@gluefalse
+      \@uline@inhibitgluefalse
+   \else
+      \def\@uline@char@class{0}%
+      \@uline@examine@cs
+   \fi
+   \@uline@next}
+\def\@uline@process@normal@char@in@url#1{%
+   \@tempcnta\csname @uline@urlCC\the\@uline@charcode\endcsname\relax
+   \@tempswafalse
+   \ifnum\@tempcnta<\sixt@@n\else
+      \@tempswatrue
+      \advance\@tempcnta-\sixt@@n
+   \fi
+   \let\@uline@curr@urlchar\relax
+   \def\@tempa{\@tfor\@tempa:=}%
+   \expandafter\@tempa\@uline@extra@urlchars\do{%
+      \expandafter\@tempcntb\expandafter=\expandafter`\@tempa\relax
+      \ifnum\@tempcntb=\@uline@charcode
+         \expandafter\let\expandafter\@uline@curr@urlchar
+            \csname @uline@urlchar\the\@uline@charcode\endcsname
+         \@break@tfor
+      \fi}%
+   \ifx\@uline@curr@urlchar\relax \def\@uline@curr@urlchar{#1}\fi
+   \ifx\@uline@prevword\@empty
+      \@uline@add@item
+   \else
+      \@tempcntb\@uline@char@class\relax
+      \ifnum\@tempcntb>\z@
+         \ifnum\@tempcntb<\thr@@
+            \ifnum\@tempcnta=\tw@\else
+               \@uline@add@penalty@in@url
+               \ifnum\@tempcnta=\@ne \@tempcnta\z@ \fi
+            \fi
+         \fi
+      \fi
+   \fi
+   \@csc@t\@uline@curr@urlchar\@uline@saved@protect\@uline@curr@urlchar
+   \@uline@append@replacement@text\@uline@prevword\@uline@curr@urlchar
+   \if@tempswa \@uline@append@tokens\@uline@prevword{{}}\fi
+   \let\@uline@prevjchar\@empty
+   \def\@uline@previtem{#1}%
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \edef\@uline@char@class{\the\@tempcnta}}
+\def\@uline@add@penalty@in@url{%
+   \edef\@tempa{%
+      \ifcase\@uline@char@class\relax
+      \or
+         \noexpand\@uline@add@nonletter{%
+            \penalty\number
+            \UrlBreakPenalty%%% \UrlBigBreakPenalty may do (see url.sty).
+            \relax}%
+      \or
+         \noexpand\@uline@add@nonletter{%
+            \penalty\number
+            \UrlBigBreakPenalty%%% \UrlBreakPenalty may do (see url.sty).
+            \relax}%
+      \fi}%
+   \@tempa}
+\def\@uline@add@nonbreak@space@in@url{%
+   \ifx\@uline@prevword\@empty \@uline@add@item \fi
+   \expandafter\@uline@append@tokens\expandafter\@uline@prevword
+      \expandafter{\@uline@saved@protect~}%
+   \let\@uline@prevjchar\@empty
+   \def\@uline@previtem{~}%
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \@@uline}
+\def\@uline@set@scripts@in@url#1{%
+%%% #1: \@@uline@get@scripts@limits (= macro containing subscripts/superscripts)
+%%%     (see \@@@uline@get@scripts)
+   \ifx\@uline@prevword\@empty \@uline@add@item \fi
+   \expandafter\@uline@append@tokens\expandafter\@uline@prevword
+      \expandafter{\expandafter$#1$}%
+   \let\@uline@prevjchar\@empty
+   \let\@uline@previtem\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \@@uline}
+\begingroup
+\def\:{\def\@uline@space}%
+\expandafter\endgroup\: {%
+   \@uline@setspace
+   \@uline@space@}
+\def\@uline@space@{%
+   \@uline@add@item
+   \@uline@add@hyphenpenalty
+   \let\@uline@hyphen@stat\@empty
+   \let\@uline@currchar\relax
+   \@uline@add@glue
+   \@uline@group@headfalse
+   \@uline@add@glue@@\@uline@currspace
+   \let\@uline@prevjchar\@empty
+   \let\@uline@prevword\@empty
+   \let\@uline@previtem\relax
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@saved@protect\@empty
+   \@uline@check@first@gluefalse
+   \@uline@inhibitgluefalse
+   \@suppress@hyphenationfalse
+   \@@uline}
+\def\@uline@setspace{%
+   \@tempswafalse
+   \ifdim\xspaceskip=\z@\else
+      \ifnum\@uline@spacefactor>2000\relax \@tempswatrue \fi
+   \fi
+   \if@tempswa
+      \edef\@tempa{\the\xspaceskip\space}%
+      \expandafter\@uline@setspace@\@tempa @ @ @ @ \@nil
+   \else
+      \ifdim\spaceskip=\z@
+         \@tempdima\@uline@curr@fontdimenii\relax
+         \ifnum\@uline@spacefactor>2000\relax
+            \advance\@tempdima\@uline@curr@fontdimenvii\relax
+         \fi
+         \@tempdimb\@uline@curr@fontdimeniii\relax
+         \@tempdimc\@uline@curr@fontdimeniv\relax
+      \else
+         \skip@\spaceskip
+         \ifnum\@uline@spacefactor>2000\relax
+            \advance\skip@\@uline@curr@fontdimenvii\relax
+         \fi
+         \edef\@tempa{\the\skip@\space}%
+         \expandafter\@uline@setspace@\@tempa @ @ @ @ \@nil
+      \fi
+      \@uline@setspace@@\@tempa\@uline@spacefactor\@m
+      \@uline@setspace@@\@tempb\@m\@uline@spacefactor
+      \@tempdimb\@tempa\@tempdimb
+      \@tempdimc\@tempb\@tempdimc
+   \fi
+   \edef\@uline@currspace{%
+      \the\@tempdima\space
+      \@plus\space\the\@tempdimb\space
+      \@minus\space\the\@tempdimc}}
+\def\@uline@setspace@#1 #2 #3 #4 #5 #6\@nil{%
+   \@tempdima#1\relax %%% \def\@uline@natsize{#1}%
+   \def\@tempa{#2}%
+   \ifx\@tempa\@uline@plus
+      \@tempdimb#3\relax %%% \def\@uline@stretch{#3}%
+      \def\@tempa{#4}%
+      \ifx\@tempa\@uline@minus
+         \@tempdimc#5\relax %%% \def\@uline@shrink{#5}%
+      \else
+         \@tempdimc\z@      %%% \def\@uline@shrink{\z@}%
+      \fi
+   \else
+      \@tempdimb\z@ %%% \def\@uline@stretch{\z@}%
+      \ifx\@tempa\@uline@minus
+         \@tempdimc#3\relax %%% \def\@uline@shrink{#3}%
+      \else
+         \@tempdimc\z@      %%% \def\@uline@shrink{\z@}%
+      \fi
+   \fi}
+\edef\@uline@plus{\expandafter\@gobble\string\plus}
+\edef\@uline@minus{\expandafter\@gobble\string\minus}
+\def\@uline@setspace@@#1#2#3{%
+   \begingroup
+   \@tempcnta#2\relax \count@\@tempcnta
+   \@tempcntb#3\relax
+   \divide\count@\@tempcntb
+   \edef\@tempa{\the\count@.}%
+   \multiply\count@\@tempcntb \advance\@tempcnta-\count@
+   \multiply\@tempcnta\@m     \divide\@tempcnta\@tempcntb
+   \edef\@tempa{%
+      \def\noexpand#1{%
+         \@tempa
+         \ifnum\@tempcnta<100 0\ifnum\@tempcnta<10 0\fi\fi
+         \the\@tempcnta}}%
+   \expandafter\endgroup\@tempa}
+\def\@uline@measure@glueparams#1{%
+   \setbox\z@\hbox{\@uline@extra@fontcommands#1{\@uline@measure@glueparams@}}%
+   \@uline@gtempa
+   \let\@uline@extra@fontcommands\@empty}
+\edef\@uline@measure@glueparams@{%
+   \xdef\noexpand\@uline@gtempa{%
+      \def\noexpand\noexpand\noexpand\@uline@curr@f@encoding{%
+         \noexpand\f@encoding}%
+      \def\noexpand\noexpand\noexpand\@uline@curr@hyphenchar{%
+         \noexpand\the\hyphenchar\font}%
+      \def\noexpand\noexpand\noexpand\@uline@curr@fontdimeni{%
+         \noexpand\the\fontdimen1\font}%
+      \def\noexpand\noexpand\noexpand\@uline@curr@fontdimenii{%
+         \noexpand\the\fontdimen2\font}%
+      \def\noexpand\noexpand\noexpand\@uline@curr@fontdimeniii{%
+         \noexpand\the\fontdimen3\font}%
+      \def\noexpand\noexpand\noexpand\@uline@curr@fontdimeniv{%
+         \noexpand\the\fontdimen4\font}%
+      \def\noexpand\noexpand\noexpand\@uline@curr@fontdimenvii{%
+         \noexpand\the\fontdimen7\font}%
+      \spaceskip=\noexpand\the\spaceskip\relax
+      \xspaceskip=\noexpand\the\xspaceskip\relax
+      \expandafter\ifx\csname pfmtname\endcsname\relax\else
+         \kanjiskip=\noexpand\the\kanjiskip\relax
+         \xkanjiskip=\noexpand\the\xkanjiskip\relax
+      \fi}}
+\def\@uline@addshape#1#2{%%% #1: \fontshape etc.
+   \expandafter\def\expandafter\@uline@extra@fontcommands\expandafter{%
+      \@uline@extra@fontcommands#1{#2}}%
+   \@uline@add@nonletter{#1{#2}}%
+   \@@uline}
+\def\@uline@fontchange#1{%%% #1: \normalsize etc.
+   \@uline@add@nonletter{#1}%
+   \@@uline\@uline@execit{\@uline@measure@glueparams{#1}}}
+\def\@uline@fontsize#1#2#3{%%% #1: \fontsize
+   \expandafter\def\expandafter\@uline@extra@fontcommands\expandafter{%
+      \@uline@extra@fontcommands#1{#2}{#3}}%
+   \@uline@add@nonletter{#1{#2}{#3}}%
+   \@@uline}
+\def\@uline@setlength#1#2#3{%%% #1: \setlength/\addtolength
+   \@uline@add@nonletter{#1{#2}{#3}}%
+   \@@uline\@uline@execit{\@uline@measure@glueparams{#1{#2}{#3}}}}
+\def\@uline@bgroup#1{%
+   \ifx\@uline@hyphen@stat\@uline@single@hyphen \@suppress@hyphenationtrue \fi
+   \@uline@add@item
+   \@uline@add@hyphenpenalty
+   \let\@uline@hyphen@stat\@empty
+   \@uline@bgroup@{#1}{}%
+   \@uline@after@group{}}
+\def\@uline@bgroup@#1#2{%
+   \begingroup
+   \ifx\@uline@prevjchar\relax\else \let\@uline@prevjchar\@empty \fi
+   \let\@uline@prevword\@empty
+   \let\@uline@saved@protect\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \let\@uline@migrating@item\@empty
+   \let\@uline@text\@empty
+   \@uline@group@headtrue
+   \@uline@bgroup@@{#1}{#2}}%%% \@uline@bgroup@@ puts \endgroup
+\def\@uline@bgroup@@#1#2{%
+   \let\@uline@set@last@glue\relax
+   \@@uline#1\@nnil
+   #2%
+   \toks@\expandafter{\@uline@text}%
+   \@temptokena\expandafter{\@uline@migrating@item}%
+   \toks\tw@\expandafter{\@uline@prevjchar}%
+   \edef\@tempa{%
+      \def\noexpand\@uline@inner@text{{\the\toks@}}%
+      \def\noexpand\@uline@inner@migrating@item{\the\@temptokena}%
+      \def\noexpand\@uline@reset@group@stat{%
+         \if@uline@group@head\else \noexpand\@uline@group@headfalse \fi}%
+      \ifx\@uline@prevjchar\relax
+         \let\noexpand\@uline@prevjchar\relax
+      \else
+         \def\noexpand\@uline@prevjchar{\the\toks\tw@}%
+      \fi
+      \ifx\@uline@previtem\relax
+         \let\noexpand\@uline@previtem\relax
+      \else
+         \def\noexpand\@uline@previtem{\@uline@previtem}%
+      \fi
+      \def\noexpand\@uline@hyphen@stat{\@uline@hyphen@stat}%
+      \if@uline@inhibitglue \noexpand\@uline@inhibitgluetrue
+      \else                 \noexpand\@uline@inhibitgluefalse
+      \fi
+      \def\noexpand\@uline@spacefactor{\@uline@spacefactor}%
+      \if@suppress@hyphenation\else \noexpand\@suppress@hyphenationfalse \fi}%
+   \expandafter\endgroup\@tempa}
+\def\@uline@after@group#1{%
+   \ifx\@uline@prevjchar\relax\else \let\@uline@prevjchar\@empty \fi
+   \let\@uline@prevword\@empty
+   \let\@uline@saved@protect\@empty
+   \let\@uline@prev@saved@protect\@empty
+   \if@uline@group@head
+      \@csc@t\@uline@migrating@item
+         \@uline@migrating@item\@uline@inner@migrating@item
+   \else
+      \@uline@append@replacement@text\@uline@text\@uline@inner@migrating@item
+   \fi
+   \@uline@append@tokens\@uline@text{#1}%
+   \@uline@append@replacement@text\@uline@text\@uline@inner@text
+   \@uline@add@hyphenpenalty
+   \let\@uline@hyphen@stat\@empty
+   \@uline@reset@group@stat
+   \@@uline}
+\def\@uline@get@scripts#1{%
+   \def\@uline@get@scripts@cmd{#1}%
+   \@ifnextchar^\@@uline@get@scripts@u\@@uline@get@scripts@x}
+\def\@@uline@get@scripts@x{%
+   \@ifnextchar_\@@uline@get@scripts@l\@@uline@get@scripts@y}
+\def\@@uline@get@scripts@y{%
+   \@ifnextchar'%
+      {\@@uline@get@scripts@primes\@@uline@get@scripts@u}%
+      {\@@@uline@get@scripts{}{}}}
+\newif\if@uline@ignore@primes \@uline@ignore@primesfalse
+\def\@@uline@get@scripts@primes#1{%
+   \if@uline@ignore@primes
+      \def\@tempb{#1^{}}%
+   \else
+      \def\@@uline@get@scripts@primes@after@cmd{#1}%
+      \let\@tempa\@empty
+      \def\@tempb{\@@uline@get@scripts@primes@}%
+   \fi
+   \@tempb}
+\def\@@uline@get@scripts@primes@{%
+   \futurelet\let@token\@@uline@get@scripts@primes@@}
+\def\@@uline@get@scripts@primes@@{%
+   \ifx'\let@token
+      \expandafter\def\expandafter\@tempa\expandafter{\@tempa\prime}%
+      \expandafter\@@uline@get@scripts@prim@s@
+   \else
+      \ifx^\let@token
+         \expandafter\expandafter\expandafter\@@uline@get@scripts@primes@@@
+      \else
+         \expandafter\expandafter\expandafter\@@uline@get@scripts@primes@finish
+      \fi
+   \fi}
+\def\@@uline@get@scripts@prim@s@#1{\@@uline@get@scripts@primes@}%%% #1: '
+\def\@@uline@get@scripts@primes@@@#1#2{%
+   \expandafter\def\expandafter\@tempa\expandafter{\@tempa#2}%
+   \@@uline@get@scripts@primes@finish}
+\def\@@uline@get@scripts@primes@finish{%
+   \expandafter\@@uline@get@scripts@primes@after@cmd
+   \expandafter^\expandafter{\@tempa}}
+\def\@@uline@get@scripts@u#1{% #1: ^ or \sp
+   \@uline@get@scripts@check@math@fontcmd
+      \@@uline@get@scripts@ux\@@uline@get@scripts@uy}
+\def\@@uline@get@scripts@ux#1#2{%
+   \@ifnextchar_%
+      {\@@@uline@get@scripts@ul{#1{#2}}}%
+      {\@@@uline@get@scripts{}{#1{#2}}}}
+\def\@@uline@get@scripts@uy#1{%
+   \@ifnextchar_{\@@@uline@get@scripts@ul{#1}}{\@@@uline@get@scripts{}{#1}}}
+\def\@@uline@get@scripts@l#1{% #1: _ or \sb
+   \@uline@get@scripts@check@math@fontcmd
+      \@@uline@get@scripts@lx\@@uline@get@scripts@ly}
+\def\@@uline@get@scripts@lx#1#2{%
+   \@ifnextchar^%
+      {\@@@uline@get@scripts@lu{#1{#2}}}%
+      {\@ifnextchar'%
+         {\@@uline@get@scripts@primes{\@@@uline@get@scripts@lu{#1{#2}}}}%
+         {\@@@uline@get@scripts{#1{#2}}{}}}}
+\def\@@uline@get@scripts@ly#1{%
+   \@ifnextchar^%
+      {\@@@uline@get@scripts@lu{#1}}%
+      {\@ifnextchar'%
+          {\@@uline@get@scripts@primes{\@@@uline@get@scripts@lu{#1}}}%
+          {\@@@uline@get@scripts{#1}{}}}}
+\def\@@@uline@get@scripts@ul#1#2{% #2: _ or \sb
+   \@uline@get@scripts@check@math@fontcmd
+      {\@@uline@get@scripts@ulx{#1}}{\@@uline@get@scripts@uly{#1}}}
+\def\@@uline@get@scripts@ulx#1#2#3{%
+   \@@@uline@get@scripts{#2{#3}}{#1}}
+\def\@@uline@get@scripts@uly#1#2{\@@@uline@get@scripts{#2}{#1}}
+\def\@@@uline@get@scripts@lu#1#2{% #2: ^ or \sp
+   \@uline@get@scripts@check@math@fontcmd
+      {\@@uline@get@scripts@lux{#1}}{\@@uline@get@scripts@luy{#1}}}
+\def\@@uline@get@scripts@lux#1#2#3{\@@@uline@get@scripts{#1}{#2{#3}}}
+\def\@@uline@get@scripts@luy#1#2{\@@@uline@get@scripts{#1}{#2}}
+\def\@@@uline@get@scripts#1#2{%
+   \def\@tempa{#1}%
+   \def\@tempb{#2}%
+   \ifx\@tempa\@empty
+      \ifx\@tempb\@empty \def\@@uline@get@scripts@limits{}%
+      \else              \def\@@uline@get@scripts@limits{^{#2}}%
+      \fi
+   \else
+      \ifx\@tempb\@empty \def\@@uline@get@scripts@limits{_{#1}}%
+      \else              \def\@@uline@get@scripts@limits{_{#1}^{#2}}%
+      \fi
+   \fi
+   \@uline@get@scripts@cmd\@@uline@get@scripts@limits}
+\newif\if@uline@get@script@tempsw
+\let\@uline@get@scripts@saved@protect\@empty
+\def\@uline@get@scripts@check@math@fontcmd#1#2#3{%
+   \def\@tempa{#3}%
+   \def\@tempb{\protect}%
+   \ifx\@tempa\@tempb
+      \def\@uline@get@scripts@saved@protect{\protect}%
+      \def\@uline@get@scripts@next{%
+         \@uline@get@scripts@check@math@fontcmd{#1}{#2}}%
+   \else
+      \ifx\@tempa\@empty\else
+         \expandafter\def\expandafter\@tempa\expandafter{\@firstofone#3}%
+      \fi
+      \def\@tempx##1##2\@nil{\noexpand##1}%
+      \edef\@tempb{\@tempx#3\@empty\@nil}%
+      \@uline@get@script@tempswfalse
+      \ifx\@tempa\@tempb
+         \if\expandafter\noexpand\@tempb\relax
+            \edef\@tempc{\expandafter\expandafter\expandafter\@gobble
+               \expandafter\string\@tempb}%
+            \edef\@tempc{\@tempc\space}%
+            \edef\@tempc{\expandafter\zap@space\@tempc\@empty}%
+            \expandafter\ifx\csname \@tempc\space\endcsname\relax
+               \expandafter\ifx\csname @\@tempc\endcsname\relax
+                  %%% for older version of LaTeX2e
+                  \ifx\@uline@get@scripts@saved@protect\@empty
+                     \let\@tempc\@empty
+                  \fi
+               \else
+                  \edef\@tempc{@\@tempc}%
+               \fi
+            \else
+               \edef\@tempc{\@tempc\space}%
+            \fi
+            \ifx\@tempc\@empty\else
+               \edef\@tempa{\noexpand\in@
+                  {\string\select@group}%
+                  {\expandafter\meaning\csname\@tempc\endcsname}}%
+               \@tempa
+               \ifin@
+                  \@uline@get@script@tempswtrue
+               \else
+                  \edef\@tempa{\noexpand\in@
+                     {\string\use@mathgroup}%
+                     {\expandafter\meaning\csname\@tempc\endcsname}}%
+                  \@tempa
+                  \ifin@ \@uline@get@script@tempswtrue \fi
+               \fi
+            \fi
+         \fi
+      \fi
+      \if@uline@get@script@tempsw \def\@tempa{#1}%
+      \else                       \def\@tempa{#2}%
+      \fi
+      \expandafter\def\expandafter\@tempb\expandafter{%
+         \expandafter{\@uline@get@scripts@saved@protect#3}}%
+      \@csc@t\@uline@get@scripts@next\@tempa\@tempb
+      \let\@uline@get@scripts@saved@protect\@empty
+   \fi
+   \@uline@get@scripts@next}
+\def\@uline@append@tokens#1#2{\expandafter\def\expandafter#1\expandafter{#1#2}}
+\def\@uline@append@replacement@text#1#2{%
+   \expandafter\@uline@append@tokens\expandafter#1\expandafter{#2}}
+\def\@csc@t#1#2#3{%
+   \expandafter\expandafter\expandafter\def
+   \expandafter\expandafter\expandafter#1%
+   \expandafter\expandafter\expandafter{\expandafter#2#3}}
+\@uline@temp

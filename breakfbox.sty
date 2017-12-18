@@ -1,0 +1,26 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{breakfbox}[2017/12/18 v0.1]
+\RequirePackage[usetype1]{uline--}
+
+\newdimen\bfbox@lineposition
+\newdimen\bfbox@linegap
+\newdimen\bfbox@height
+\newdimen\bfbox@depth
+\newbox\bfbox@content
+
+\def\breakfbox#1{%
+  \setbox\bfbox@content\hbox{#1}%
+  \bfbox@lineposition=\dimexpr\ht\bfbox@content+\fboxsep+.5\fboxrule\relax
+  \bfbox@linegap=\dimexpr\ht\bfbox@content+\dp\bfbox@content+2\fboxsep\relax
+  \bfbox@height=\dimexpr\bfbox@linegap+2\fboxrule\relax
+  \bfbox@depth=\dimexpr-\dp\bfbox@content-\fboxrule-\fboxsep\relax
+  \rule[\bfbox@depth]{\fboxrule}{\bfbox@height}%
+  \nobreak
+  \uline[lines=2,position=\bfbox@lineposition,linegap=\bfbox@linegap,width=\fboxrule]{%
+    \hspace{\fboxsep}#1\nobreak\hspace{\fboxsep}%
+  }%
+  \nobreak
+  \rule[\bfbox@depth]{\fboxrule}{\bfbox@height}%
+}
+
+\endinput

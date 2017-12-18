@@ -1,0 +1,31 @@
+\documentclass[autodetect-engine]{jsarticle}
+\usepackage{breakfbox}
+\begin{document}
+\parindent=0pt
+
+%%% \fbox との高さ比較
+あいうえお\fbox{ほげ}と\breakfbox{ほげ}です。\par
+{\fboxsep=5pt \fboxrule=2pt あいうえお\fbox{ほげ}と\breakfbox{ほげ}です。}
+
+%%% \fbox との横幅比較
+あいうえお\fbox{ほげ}です。\par あいうえお\breakfbox{ほげ}です。\par
+{\fboxsep=5pt \fboxrule=2pt あいうえお\fbox{ほげ}です。\par あいうえお\breakfbox{ほげ}です。}
+
+%%% 高さ・深さが大きい場合の確認
+\def\hoge{$\displaystyle\sum_{n=1}^{\infty}\frac{1}{n^2}=\frac{\pi^2}{6}$}
+あいうえお\fbox{\hoge}と\breakfbox{\hoge}です。\par
+{\fboxsep=5pt \fboxrule=2pt あいうえお\fbox{\hoge}と\breakfbox{\hoge}です。}
+
+%%%%%%%%%%%%%%%% 文字サイズが異なる場合の確認
+\begingroup
+\huge
+%%% \fbox との高さ比較
+あいうえお\fbox{ほげ}と\breakfbox{ほげ}です。\par
+{\fboxsep=5pt \fboxrule=2pt あいうえお\fbox{ほげ}と\breakfbox{ほげ}です。}
+
+%%% \fbox との横幅比較
+あいうえお\fbox{ほげ}です。\par あいうえお\breakfbox{ほげ}です。\par
+{\fboxsep=5pt \fboxrule=2pt あいうえお\fbox{ほげ}です。\par あいうえお\breakfbox{ほげ}です。}
+\endgroup
+
+\end{document}
