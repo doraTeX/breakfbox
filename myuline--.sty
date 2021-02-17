@@ -1308,8 +1308,8 @@
       \x{\@uline@migrate@italiccorr}{skip[0][]}%
       \x{\nonletter}{skip[1][]}%
       \x{\penalty}{penalty}%
-      \x{\nobreak}{expandit}%
-      \x{\allowbreak}{expandit}%
+      \xx{\nobreak}{expandit}%
+      \xx{\allowbreak}{expandit}%
       \x{\spacefactor}{@spacefactor}%
       \x{\inhibitglue}{inhibitglue}%
       \x{\ }{ctrlspace}%
@@ -1350,8 +1350,8 @@
       \x{\frame}{normal[1][n]}%
       \x{\makebox}{makebox}%
       \x{\framebox}{makebox}%
-      \x{\llap}{expandit}%
-      \x{\rlap}{expandit}%
+      \xx{\llap}{expandit}%
+      \xx{\rlap}{expandit}%
       \x{\hb@xt@}{expandit}%
       \x{\mathhexbox}{normal[3][n]}%
       \x{\hbox}{boxcmd}%
@@ -1359,7 +1359,7 @@
       \x{\vtop}{boxcmd}%
       \x{\box}{boxcopy}%
       \x{\copy}{boxcopy}%
-      \x{\usebox}{usebox}%
+      \xx{\usebox}{usebox}%
       \x{\unhbox}{unhbox}%
       \x{\unhcopy}{unhcopy}%
       \x{\unvbox}{unvbox}%
@@ -2112,7 +2112,9 @@
    \rule              \scriptsize     \setcounter    \setlength       \stepcounter
    \small             \smash          \strut         \symbol          \TeX
    \textcircled       \textcolor      \textsquare    \tiny            \TMO
-   \unboldmath        \underbar       \underline     \vphantom}
+   \unboldmath        \underbar       \underline     \vphantom
+   \nobreak           \allowbreak     \llap          \rlap            \usebox
+   }
 \def\@uline@commands@to@protect@@jtex{\dm \min \dg \goth}
 \def\@uline@math@commands@to@protect{%
    \|               \acute          \angle       \Arrowvert       \arrowvert
