@@ -1,64 +1,69 @@
-%%% $B!VC1=c!W$J2<@~N`%^%/%m(J
+%%%% このファイルは，吉永徹美 (T. Yoshinaga) 氏による uline--.sty を，TeX Live 2020 で正しく動くように改変したものです。 [2021/02/17 寺田侑祐 (doraTeX)]
+%%%% ライセンスはオリジナルの uline--.sty に準じます。
+%%%
+%%%%%%%%% オリジナルの uline--.sty のライセンス（ここから）
+%%% 「単純」な下線類マクロ
 %%% (C) 2006--2007 T. Yoshinaga
 %%%
-%%% $B$3$N%U%!%$%k$O!V8=>u$N$^$^!W$GDs6!$5$l!$(J
-%%% $B$3$N%U%!%$%k$,;HMQL\E*$K1h$C$?5!G=$rDs6!$9$k$3$H$OJ]>Z$5$l$^$;$s!%(J
-%%% $B$^$?!$$3$N%U%!%$%k$r;HMQ$7$?$3$H$"$k$$$O;HMQ$G$-$J$+$C$?$3$H$K$h$j!$(J
-%%% $BD>@\E*$"$k$$$O4V@\E*$K@8$8$?$$$+$J$kB;32$KBP$7$F$b!$(J
-%%% $B$3$N%U%!%$%k$N:n@.<T$O$$$+$J$k@UG$$bIi$o$J$$$b$N$H$7$^$9!%(J
+%%% このファイルは「現状のまま」で提供され，
+%%% このファイルが使用目的に沿った機能を提供することは保証されません．
+%%% また，このファイルを使用したことあるいは使用できなかったことにより，
+%%% 直接的あるいは間接的に生じたいかなる損害に対しても，
+%%% このファイルの作成者はいかなる責任も負わないものとします．
 %%%
-%%% $B2~JQ!&:FG[I[$K$D$$$F(J:
-%%% $B$3$N%U%!%$%k$N:n@.<T0J30$,$3$N%U%!%$%k$N2~JQHG$r(J
-%%% $B$3$N%U%!%$%k$HF10l$NL>>N$G:FG[I[$9$k$3$H$r6X$8$^$9!%(J
-%%% $B$?$@$7!$!V2~JQ$r;\$5$J$$>uBV$G$N:FG[I[!W!$!V2~JQHG$NJL%U%!%$%kL>$G$N(J
-%%% $B;HMQ!&:FG[I[!W$O!$0J2<$N(J 2 $B>r7o$K=>$&8B$j<+M3$G$9!%(J
-%%% $B!&Ev3:$N2~JQHG$*$h$S$=$NGI@8J*$N%U%!%$%kL>$O$3$N%U%!%$%k$NL>>N(J
-%%%   $B!J(Juline--.sty$B!K$H$O0[$J$k$b$N$K$9$k!%(J
-%%% $B!&Ev3:$N2~JQHG$NGI@8J*$KBP$7$F$b$3$l$i(J 2 $B>r7o$r2]$9!%(J
-%%% %%% $B>r7o=*$o$j(J
+%%% 改変・再配布について:
+%%% このファイルの作成者以外がこのファイルの改変版を
+%%% このファイルと同一の名称で再配布することを禁じます．
+%%% ただし，「改変を施さない状態での再配布」，「改変版の別ファイル名での
+%%% 使用・再配布」は，以下の 2 条件に従う限り自由です．
+%%% ・当該の改変版およびその派生物のファイル名はこのファイルの名称
+%%%   （uline--.sty）とは異なるものにする．
+%%% ・当該の改変版の派生物に対してもこれら 2 条件を課す．
+%%% %%% 条件終わり
+%%%%%%%%% オリジナルの uline--.sty のライセンス（ここまで）
 %%%
-%%% $BMQK!(J:
+%%% 用法:
 %%% \uline[<options>]{<text>}
-%%% <text>: $B2<@~$J$I$rIU2C$9$kBP>]$NJ8;zNs(J
+%%% <text>: 下線などを付加する対象の文字列
 %%% <options>:
-%%% position=<dimen>:  $B2<@~$J$I$N4p=`0LCV$r@#K!(J <dimen> $B$N$H$3$m$K@_Dj(J
-%%%                    $B!J%Y!<%9%i%$%s$N$H$3$m$,(J 0pt$B$G!$2#AH$_;~$N>e8~$-$,@5!K(J
-%%% lines=<number>:    $B2<@~$J$I$NK\?t$r@5@0?t(J <number> $B$K@_Dj(J
-%%% width=<dimen>:     $B2<@~$J$I$NB@$5$r@#K!(J <dimen> $B$K@_Dj(J
-%%% linegap=<dimen>:   2 $B=E0J>e$N2<@~$J$I$G$N@~$N4V3V$r@#K!(J <dimen> $B$K@_Dj(J
-%%% dashlength=<size>: $BGK@~$N7+$jJV$7%Q%?!<%s$N<B@~ItJ,$ND9$5$r(J <size> $B$K@_Dj(J
-%%% dashgap=<gap>:     $BGK@~$N7+$jJV$7%Q%?!<%s$N6uGrItJ,$ND9$5$r(J <gap> $B$K@_Dj(J
-%%% dotgap=<gap>:      $BE@@~$NE@$N4V3V$r(J <gap> $B$K@_Dj(J
-%%% foreground:        $B2<@~$J$I$r!$$=$l$i$rIU2C$9$kBP>]$NJ8;zNs$NA0LL$KIA2h(J
-%%% background:        $B2<@~$J$I$r!$$=$l$i$rIU2C$9$kBP>]$NJ8;zNs$NGX8e$KIA2h(J
-%%% nomath:            <text> $BItJ,$K4^$^$l$k?t<0Cf$G$N9TJ,3d=hM}$rM^;_(J
-%%% color=<colorname>: $B2<@~$J$I$N?'$r(J <colorname>$B!J?'L>!K$K@_Dj(J
+%%% position=<dimen>:  下線などの基準位置を寸法 <dimen> のところに設定
+%%%                    （ベースラインのところが 0ptで，横組み時の上向きが正）
+%%% lines=<number>:    下線などの本数を正整数 <number> に設定
+%%% width=<dimen>:     下線などの太さを寸法 <dimen> に設定
+%%% linegap=<dimen>:   2 重以上の下線などでの線の間隔を寸法 <dimen> に設定
+%%% dashlength=<size>: 破線の繰り返しパターンの実線部分の長さを <size> に設定
+%%% dashgap=<gap>:     破線の繰り返しパターンの空白部分の長さを <gap> に設定
+%%% dotgap=<gap>:      点線の点の間隔を <gap> に設定
+%%% foreground:        下線などを，それらを付加する対象の文字列の前面に描画
+%%% background:        下線などを，それらを付加する対象の文字列の背後に描画
+%%% nomath:            <text> 部分に含まれる数式中での行分割処理を抑止
+%%% color=<colorname>: 下線などの色を <colorname>（色名）に設定
 %%% color={[<model>]<parameters>}:
-%%% $B2<@~$J$I$N?'$r(J \color[<model>]{<parameters>} $B$G;XDj$5$l$k?'$K@_Dj(J
+%%% 下線などの色を \color[<model>]{<parameters>} で指定される色に設定
 %%%
-%%% \mline$B!$(J\oline $B$K$D$$$F$b=q<0$OF1$8$G$9!JC1$K(J \uline $B$,2<@~$r0z$/$N$KBP$7!$(J
-%%% \mline$B!$(J\oline $B$O$=$l$>$lBG$A>C$7@~!$>e@~$r0z$/$N$,(J
-%%% $B%G%U%)%k%H@_Dj$H$$$&DxEY$N0c$$$7$+$"$j$^$;$s!K!%(J
-%%% $B$^$?!$(J\uline $B$J$I$K$D$$$F(J line => dash $B$H$9$l$PGK@~HG$K!$(J
-%%% line => wave $B$H$9$l$PGH@~HG$K!$(Jline => dotline $B$H$9$l$PE@@~HG$K$J$j$^$9!%(J
-%%% $BNc$($P!$(J\udash $B$OGK@~$N2<@~$r:n@.$7$^$9!%(J
-%%% $B>\$7$$MQK!!&MQNc$*$h$SCm0U;v9`$K4X$7$F$O%^%K%e%"%k!J(Juline--.tex$B!K$r(J
-%%% $B;2>H$7$F$/$@$5$$!%(J
+%%% \mline，\oline についても書式は同じです（単に \uline が下線を引くのに対し，
+%%% \mline，\oline はそれぞれ打ち消し線，上線を引くのが
+%%% デフォルト設定という程度の違いしかありません）．
+%%% また，\uline などについて line => dash とすれば破線版に，
+%%% line => wave とすれば波線版に，line => dotline とすれば点線版になります．
+%%% 例えば，\udash は破線の下線を作成します．
+%%% 詳しい用法・用例および注意事項に関してはマニュアル（uline--.tex）を
+%%% 参照してください．
 %%% \version{2007/07/09}
-\ProvidesPackage{uline--}[2007/07/09 v.2.3.4 ``simple'' underlines]
+\ProvidesPackage{myuline--}[2021/02/17 v.2.3.5 ``simple'' underlines]
 \edef\@uline@temp{\catcode"1B=\number\catcode"1B\relax}
 \catcode"1B=12\relax
 \newif\if@uline@altglue \@uline@altgluefalse
 \def\UseAltLeaders{\@uline@altgluetrue}
 \@onlypreamble\UseAltLeaders
-%%% \UseAltLeaders $B$O!$J#?t$N?'$N2<@~$r=E$M$k>l9g$J$I$K$D$$$F2<@~$N=PNO$,(J
-%%% $B68$&>l9g$K%j!<%@!<It$N=hM}$r!J?'$N=hM}$K4X$7$F$O!KL5Fq$J$b$N$K(J
-%%% $B<h$j49$($k;X<($r9T$&%^%/%m$G$9!J$?$@$7!$=hM}$,=E$?$/$J$j!$$^$?!$(J
-%%% $B2<@~It$K(J \@uline@altglue@unit $B$N(J 2 $BG\L$K~$NES@Z$l$,@8$8$k$3$H$,$"$j$^$9!K!%(J
-%%% $B$^$?!$(J\UseAltLeaders $B$O%W%j%"%s%V%k%3%^%s%I$K$7$J$/$F$b$h$$$N$G$9$,!$(J
-%%% \nonletter{\protect\UseAltLeaders} $B$N$h$&$J5-=R$rMQ$$$F(J
-%%% $BFbB&$N(J \uline $B$J$I$K$@$1(J \UseAltLeaders $B;XDj$rE,MQ$5$;$k$H(J
-%%% $B=hM}$,GKC>$9$k$?$a!$G0$N$?$a$K%W%j%"%s%V%k%3%^%s%I$H$7$F$$$^$9!%(J
+%%% \UseAltLeaders は，複数の色の下線を重ねる場合などについて下線の出力が
+%%% 狂う場合にリーダー部の処理を（色の処理に関しては）無難なものに
+%%% 取り換える指示を行うマクロです（ただし，処理が重たくなり，また，
+%%% 下線部に \@uline@altglue@unit の 2 倍未満の途切れが生じることがあります）．
+%%% また，\UseAltLeaders はプリアンブルコマンドにしなくてもよいのですが，
+%%% \nonletter{\protect\UseAltLeaders} のような記述を用いて
+%%% 内側の \uline などにだけ \UseAltLeaders 指定を適用させると
+%%% 処理が破綻するため，念のためにプリアンブルコマンドとしています．
 \DeclareOption{altleaders}{\@uline@altgluetrue}
 \let\@uline@uwave@adjust\relax
 \DeclareOption{usepk}{\def\@uline@uwave@adjust{\kern-.3\p@}}
@@ -205,8 +210,8 @@
    \expandafter\let\csname iftdir\expandafter\endcsname\csname iffalse\endcsname
    \let\tbaselineshift\dimen@ii
    \let\@uline@sample@jchar\@empty
-   %%% $B0J2<$N(J 4 $B8D$O$3$A$i$KJ,4t$7$F$$$k>l9g$K$OMQ$$$i$l$J$$$O$:$G$9$,!$(J
-   %%% $BG0$N$?$a$K%@%_!<$rMQ0U$7$^$9!%(J
+   %%% 以下の 4 個はこちらに分岐している場合には用いられないはずですが，
+   %%% 念のためにダミーを用意します．
    \def\prebreakpenalty{\z@ \begingroup \afterassignment\endgroup \count@=}
    \let\postbreakpenalty\prebreakpenalty
    \def\xspcode#1{\z@}
@@ -235,7 +240,7 @@
       \noexpand\else
          \let\noexpand\@uline@strutdp\noexpand\@ulinestrutdp
       \noexpand\fi}
-   \def\@uline@sample@jchar{$BG-(J}%%% $B%?%$%W(J 0 $B$NJ8;z$J$i2?$G$b$h$$(J
+   \def\@uline@sample@jchar{猫}%%% タイプ 0 の文字なら何でもよい
 \fi
 \newif\if@uline@check@first@glue
 \newif\if@uline@inhibitglue
@@ -415,15 +420,15 @@
       {\@ulinepre@process@verb@\@uline@obeyspaces}}
 \begingroup
 \catcode`\ =\active%
-\gdef\@uline@obeyspaces{\catcode`\ \active\def {\noexpand~}}%
+\gdef\@uline@obeyspaces{\catcode`\ \active\def {\noexpand‾}}%
 \gdef\@uline@sobeyspaces{\catcode`\ \active\def {\char32\relax}}%
 \endgroup
 \def\@uline@do@noligs#1{%
   \catcode`#1\active
   \begingroup
-     \lccode`\~`#1\relax
+     \lccode`\‾`#1\relax
      \lowercase{\endgroup
-        \edef~{\noexpand\noexpand\noexpand\leavevmode
+        \edef‾{\noexpand\noexpand\noexpand\leavevmode
            \kern\z@\char\number`#1\relax}}}
 \def\@uline@verb@backslash{\@backslashchar}%
 \AtBeginDocument{%
@@ -431,10 +436,10 @@
 \def\@ulinepre@process@verb@#1#2{%
    \catcode`\\=\active
    \begingroup
-   \lccode`\~=`\\%
+   \lccode`\‾=`\\%
    \lowercase{%
       \endgroup
-      \def~{\@uline@verb@backslash}}%
+      \def‾{\@uline@verb@backslash}}%
    \def\@tempa##1#2{%
       \def\@tempa{##1}%
       \@ulinepre@process@verb@@}%
@@ -548,7 +553,7 @@
           {\_1{\_\penalty\@m}}{\|1{\mid}}%
           {\{3{\lbrace}}{\}1{\mathbin{\rbrace}}}%
           {\\1{\mathbin{\backslash}}}{\ 0{\ }}%
-          {\~0{\raise.6ex\hbox{\m@th$\scriptstyle\sim$}}}%
+          {\‾0{\raise.6ex\hbox{\m@th$\scriptstyle\sim$}}}%
           \do{\expandafter\@tempa\@tempb}%
        \@for\@tempa:=%
           UrlOrds,UrlBreaks,UrlBigBreaks,UrlNoBreaks,UrlSpecials%
@@ -569,9 +574,9 @@
    \@uline@setstrut
    \if@uline@altglue \let\@uline@glue\@uline@altglue \fi
    \escapechar`\\%
-   \let\@uline@prevjchar\relax%%% $BFI$_<h$jCf$N2U=j$ND>A0$NOBJ8J8;z!JL$=PNO!K(J
-   \let\@uline@prevword\@empty%%% $BFI$_<h$jCf$N2U=j$ND>A0$NHsOBJ8J8;z$NNs!JL$=PNO!K(J
-   \let\@uline@previtem\@empty%%% $BFI$_<h$jCf$N2U=j$ND>A0$NJ8;z!JJ8;z4V%0%k!<$NB,Dj$J$I$K;HMQ!K(J
+   \let\@uline@prevjchar\relax%%% 読み取り中の箇所の直前の和文文字（未出力）
+   \let\@uline@prevword\@empty%%% 読み取り中の箇所の直前の非和文文字の列（未出力）
+   \let\@uline@previtem\@empty%%% 読み取り中の箇所の直前の文字（文字間グルーの測定などに使用）
    \let\@uline@hyphen@stat\@empty
    \def\@uline@spacefactor{1000}%
    \let\@uline@curr@f@encoding\f@encoding
@@ -1257,7 +1262,7 @@
          \edef#1{\noexpand\color[\@uline@color@model]{\@uline@color@value}}%
       \fi
    \fi}
-\def\@uline@accents{\"\'\.\=\^\`\~\H\v\u\b\c\d\r\t\k}
+\def\@uline@accents{\"\'\.\=\^\`\‾\H\v\u\b\c\d\r\t\k}
 \def\@uline@special@letters{%
    \AA\aa\AE\ae\DH\dh\DJ\dj\i\j\L\l\NG\ng\O\o\OE\oe\SS\ss\TH\th}
 \begingroup
@@ -1608,10 +1613,10 @@
       \x{\ajNenrei}{normal[1][j]}%
       \x{\ajKosu}{normal[1][j]}%
       \x{\ajFrac}{normal[1][*j]}%
-      \x{\aj$BH>3Q(J}{normal[1][j]}%
+      \x{\aj半角}{normal[1][j]}%
       \x{\ajLig}{normal[1][j]}%
       \x{\ajPICT}{normal[1][j]}%
-      \x{\$B"((J}{normal[1][j]}%
+      \x{\※}{normal[1][j]}%
       \x{\ajArrow}{normal[1][j]}%
       \x{\ajKunten}{normal[1][j]}%
       \x{\ajTsumesuji}{ajTsumesuji}%
@@ -2137,7 +2142,7 @@
    \let\@uline@commands@to@protect@ajmacros\@empty
 \else
    \def\@uline@commands@to@protect@ajmacros{%
-      \$B"((J            \aj$BH>3Q(J          \ajApostrophe     \ajArrow
+      \※            \aj半角          \ajApostrophe     \ajArrow
       \ajCross       \ajFrac          \ajHasenKakuAlph  \ajHashigoTaka
       \ajHishi       \ajKakko         \ajKakkoalph      \ajKakkoAlph
       \ajKakkoHira   \ajKakkoKansuji  \ajKakkoKata      \ajKakkoroman
@@ -2479,7 +2484,7 @@
    {n{\def\@uline@item@type{n}}}{{noglue}{\def\@uline@item@type{n}}}%
    {j{\def\@uline@item@type{j}}}{{kanji}{\def\@uline@item@type{j}}}%
 \expandafter\ifx\csname pfmtname\endcsname\relax\else
-   {{$B4A;z(J}{\def\@uline@item@type{j}}}%
+   {{漢字}{\def\@uline@item@type{j}}}%
 \fi
    {p{\def\@uline@item@type{p}}}{{postfix}{\def\@uline@item@type{p}}}}
 \edef\@AddMathCommandInUline@checklist{%
@@ -2517,7 +2522,7 @@
       \ifx##2\@nnil\else \expandafter\@tempb \fi}%
    \expandafter\@tempa#1[#2\@nnil
    \xdef#1{\the\toks@}}
-\def\@uline@unbreakable{$B!=!E!D(J}
+\def\@uline@unbreakable{—‥…}
 \def\@@uline{\futurelet\let@token\@@@uline}
 \def\@@@uline{%
    \let\@tempa\@uline@checktoken
@@ -2961,8 +2966,8 @@
             \def\@uline@previtem{#1}%
             \ifnum`\-=\@uline@charcode
                \def\@uline@hyphen@stat{-}%
-               %%% %%% pp.123--456 $B$N(J en-dash $B$ND>8e$H$$$C$?2U=j$G$N9TJ,3d$r(J
-               %%% %%% $BM^@)$9$k$J$i!$<!$N9T$N$h$&$K@_Dj!%(J
+               %%% %%% pp.123--456 の en-dash の直後といった箇所での行分割を
+               %%% %%% 抑制するなら，次の行のように設定．
                %%% \edef\@uline@hyphen@stat{\@uline@hyphen@stat -}%
             \else
                \let\@uline@hyphen@stat\@empty
@@ -4386,12 +4391,12 @@
       {\{\textbraceleft\textbraceleft{\expandafter\@gobble\string\{}}%
       {\}\textbraceright\textbraceright{\expandafter\@gobble\string\}}}%
       {\\\textbackslash\textbackslash{\expandafter\@gobble\string\\}}%
-      {\~\textasciitilde\textasciitilde{\string~}}%
+      {\‾\textasciitilde\textasciitilde{\string‾}}%
       {\$\textdollar\textdollar{\string$}}%
       {\^\textasciicircum\textasciicircum{\string^}}%
       {\*\textasteriskcentered\textasteriskcentered*}%
       \do{\expandafter\@uline@init@char@table@for@url@\@tempa}}
-\def\@uline@extra@urlchars@{\ \<\>\_\|\{\}\\\~\$\^\*}
+\def\@uline@extra@urlchars@{\ \<\>\_\|\{\}\\\‾\$\^\*}
 \def\@uline@init@char@table@for@url@#1#2#3#4{%
    \count@=`#1\relax
    \def\@uline@encoding@temp{OT1}%
@@ -4502,9 +4507,9 @@
                \def\@uline@next{%
                   \@uline@get@scripts\@uline@set@scripts@in@url_}%
             \else
-               \ifx#1~\relax
-                  \def\@tempa##1\~##2\@nil{\def\@tempa{##2}}%
-                  \expandafter\@tempa\UrlSpecials\~\@nil
+               \ifx#1‾\relax
+                  \def\@tempa##1\‾##2\@nil{\def\@tempa{##2}}%
+                  \expandafter\@tempa\UrlSpecials\‾\@nil
                   \ifx\@tempa\@empty
                      \def\@uline@next{\@uline@add@nonbreak@space@in@url}%
                   \else
@@ -4597,9 +4602,9 @@
 \def\@uline@add@nonbreak@space@in@url{%
    \ifx\@uline@prevword\@empty \@uline@add@item \fi
    \expandafter\@uline@append@tokens\expandafter\@uline@prevword
-      \expandafter{\@uline@saved@protect~}%
+      \expandafter{\@uline@saved@protect‾}%
    \let\@uline@prevjchar\@empty
-   \def\@uline@previtem{~}%
+   \def\@uline@previtem{‾}%
    \let\@uline@prev@saved@protect\@empty
    \let\@uline@saved@protect\@empty
    \@@uline}
@@ -5180,10 +5185,10 @@
                   \divide\@tempcnta 4096\relax
                   \ifnum 7<\@tempcnta
                      \begingroup
-                     \lccode`\~=\@uline@charcode
+                     \lccode`\‾=\@uline@charcode
                      \lowercase{\expandafter\endgroup
                         \expandafter\def\expandafter\@uline@next
-                        \expandafter{\expandafter\@uline@parse@math@~}}%
+                        \expandafter{\expandafter\@uline@parse@math@‾}}%
                   \else
                      \ifnum 6<\@tempcnta \@tempcnta\z@ \fi
                      \expandafter\@uline@parse@math@prepare@next
