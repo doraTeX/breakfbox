@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{breakfbox}[2021/02/17 v0.2]
+\ProvidesPackage{breakfbox}[2023/03/21 v0.3]
 \RequirePackage[usetype1]{myuline--}
 
 \newdimen\bfbox@lineposition
@@ -17,7 +17,7 @@
   \rule[\bfbox@depth]{\fboxrule}{\bfbox@height}%
   \nobreak
   \uline[lines=2,position=\bfbox@lineposition,linegap=\bfbox@linegap,width=\fboxrule]{%
-    \hspace{\fboxsep}#1\nobreak\hspace{\fboxsep}%
+    \hspace{\fboxsep}#1\inhibitglue\nobreak\hspace{\fboxsep}%
   }%
   \nobreak
   \rule[\bfbox@depth]{\fboxrule}{\bfbox@height}%
